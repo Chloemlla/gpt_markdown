@@ -1,0 +1,27 @@
+# Ignore example lock file
+example/pubspec.lock
+
+# Ignore generated files
+example/linux/flutter/generated_plugin_registrant.cc
+example/linux/flutter/generated_plugin_registrant.h
+example/linux/flutter/generated_plugins.cmake
+example/macos/Flutter/GeneratedPluginRegistrant.swift
+example/windows/flutter/generated_plugin_registrant.cc
+example/windows/flutter/generated_plugin_registrant.h
+example/windows/flutter/generated_plugins.cmake
+
+# Ignore build directories
+build/
+.dart_tool/
+
+# Ignore IDE files
+.idea/
+.vscode/
+*.iml
+
+# Ignore test coverage
+coverage/
+
+# Ignore temporary files
+*.log
+*.tmp
