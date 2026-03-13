@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// A builder function for the ordered list.
 typedef OrderedListBuilder =

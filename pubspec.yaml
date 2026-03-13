@@ -1,7 +1,7 @@
-name: gpt_markdown
+name: gpt_markdown_chloemlla
 description: "Powerful Flutter Markdown & LaTeX Renderer: Rich Text, Math, Tables, Links, and Text Selection. Ideal for ChatGPT, Gemini, and more."
-version: 1.1.5
-homepage: https://github.com/Infinitix-LLC/gpt_markdown
+version: '2.0.0'
+homepage: https://github.com/Chloemlla/gpt_markdown
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
@@ -19,6 +19,8 @@ dev_dependencies:
   flutter_lints: ^6.0.0
 
 flutter:
+  assets:
+    - assets/github-markdown.css
   fonts:
     - family: JetBrainsMono
       fonts:

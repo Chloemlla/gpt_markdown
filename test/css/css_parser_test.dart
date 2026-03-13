@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown/css/css_parser.dart';
+import 'package:gpt_markdown_chloemlla/css/css_parser.dart';
 
 void main() {
   group('CssParser', () {
@@ -16,7 +16,9 @@ void main() {
       });
 
       test('parses color in rgba format', () {
-        final style = CssParser.parseInlineStyle('color: rgba(255, 0, 0, 0.5);');
+        final style = CssParser.parseInlineStyle(
+          'color: rgba(255, 0, 0, 0.5);',
+        );
         expect(style?.color?.value, 0x80FF0000);
       });
 
@@ -61,7 +63,9 @@ void main() {
       });
 
       test('parses text-decoration line-through', () {
-        final style = CssParser.parseInlineStyle('text-decoration: line-through;');
+        final style = CssParser.parseInlineStyle(
+          'text-decoration: line-through;',
+        );
         expect(style?.decoration, TextDecoration.lineThrough);
       });
 
@@ -123,7 +127,9 @@ void main() {
       });
 
       test('parses rgba with decimal alpha', () {
-        final style = CssParser.parseInlineStyle('color: rgba(255, 0, 0, 0.75);');
+        final style = CssParser.parseInlineStyle(
+          'color: rgba(255, 0, 0, 0.75);',
+        );
         expect(style?.color?.value, 0xBFFF0000);
       });
 
@@ -151,7 +157,10 @@ void main() {
       test('parses various px values', () {
         expect(CssParser.parseInlineStyle('font-size: 10px;')?.fontSize, 10.0);
         expect(CssParser.parseInlineStyle('font-size: 24px;')?.fontSize, 24.0);
-        expect(CssParser.parseInlineStyle('font-size: 100px;')?.fontSize, 100.0);
+        expect(
+          CssParser.parseInlineStyle('font-size: 100px;')?.fontSize,
+          100.0,
+        );
       });
 
       test('parses pt values', () {

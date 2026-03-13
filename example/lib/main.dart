@@ -2,8 +2,8 @@ import 'dart:io';
 
 import 'package:desktop_drop/desktop_drop.dart';
 import 'package:flutter/material.dart';
-import 'package:gpt_markdown/custom_widgets/selectable_adapter.dart';
-import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/custom_widgets/selectable_adapter.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:watcher/watcher.dart';
 
@@ -87,7 +87,7 @@ class _MyHomePageState extends State<MyHomePage> {
 ```markdown
 # Complex Markdown Document for Testing
 
-This document is designed to **challenge** your `gpt_markdown` package by incorporating a wide variety of Markdown components including headers, lists, tables, code blocks, blockquotes, footnotes, and LaTeX math expressions.
+This document is designed to **challenge** your `gpt_markdown_chloemlla` package by incorporating a wide variety of Markdown components including headers, lists, tables, code blocks, blockquotes, footnotes, and LaTeX math expressions.
 
 ---
 

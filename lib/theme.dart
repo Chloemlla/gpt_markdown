@@ -1,4 +1,4 @@
-part of 'gpt_markdown.dart';
+part of 'gpt_markdown_chloemlla.dart';
 
 /// Theme defined for `GptMarkdown` widget
 class GptMarkdownThemeData extends ThemeExtension<GptMarkdownThemeData> {

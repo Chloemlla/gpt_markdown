@@ -11,8 +11,8 @@ dependencies:
     sdk: flutter
 
   cupertino_icons: ^1.0.2
-  gpt_markdown:
-    path: ../../gpt_markdown
+  gpt_markdown_chloemlla:
+    path: ../
   flutter_math_fork: ^0.7.2
   watcher: ^1.1.0
   desktop_drop: ^0.4.4

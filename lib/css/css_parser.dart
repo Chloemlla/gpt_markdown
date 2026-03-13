@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:csslib/parser.dart' as css;
+import 'package:csslib/visitor.dart' as css;
 
 /// CSS Parser for parsing inline styles and style attributes
 class CssParser {
@@ -12,6 +14,14 @@ class CssParser {
     } catch (e) {
       return baseStyle;
     }
+  }
+
+  /// Parse CSS properties from a Map to TextStyle
+  static TextStyle? parsePropertiesMap(
+    Map<String, String> properties, {
+    TextStyle? baseStyle,
+  }) {
+    return _buildTextStyle(properties, baseStyle);
   }
 
   /// Parse CSS properties from inline style string
@@ -99,7 +109,13 @@ class CssParser {
     // Hex color
     if (colorString.startsWith('#')) {
       final hex = colorString.substring(1);
-      if (hex.length == 6) {
+      if (hex.length == 3) {
+        // Short hex: #RGB -> #RRGGBB
+        final r = hex[0] + hex[0];
+        final g = hex[1] + hex[1];
+        final b = hex[2] + hex[2];
+        return Color(int.parse('FF$r$g$b', radix: 16));
+      } else if (hex.length == 6) {
         return Color(int.parse('FF$hex', radix: 16));
       } else if (hex.length == 8) {
         return Color(int.parse(hex, radix: 16));
@@ -119,6 +135,11 @@ class CssParser {
       }
     }
 
+    // Handle transparent
+    if (colorString == 'transparent' || colorString == 'rgba(0,0,0,0)') {
+      return Colors.transparent;
+    }
+
     // Named colors
     return _namedColors[colorString];
   }
@@ -135,6 +156,9 @@ class CssParser {
     } else if (sizeString.endsWith('em')) {
       final em = double.tryParse(sizeString.replaceAll('em', ''));
       return em != null ? em * 16 : null;
+    } else if (sizeString.endsWith('rem')) {
+      final rem = double.tryParse(sizeString.replaceAll('rem', ''));
+      return rem != null ? rem * 16 : null;
     }
 
     return double.tryParse(sizeString);

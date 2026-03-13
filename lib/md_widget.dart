@@ -1,4 +1,4 @@
-part of 'gpt_markdown.dart';
+part of 'gpt_markdown_chloemlla.dart';
 
 /// It creates a markdown widget closed to each other.
 class MdWidget extends StatefulWidget {

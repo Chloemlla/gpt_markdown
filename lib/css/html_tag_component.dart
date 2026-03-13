@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
-import 'package:gpt_markdown/custom_widgets/markdown_config.dart';
-import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/custom_widgets/markdown_config.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 import 'css_parser.dart';
 
 /// HTML tag component with CSS style support
 class HtmlTagMd extends InlineMd {
   @override
   RegExp get exp => RegExp(
-        r'<(span|div|p|strong|em|i|b|u|s|mark)(?:\s+style="([^"]*)")?>(.*?)</\1>',
-        dotAll: true,
-      );
+    r'<(span|div|p|strong|em|i|b|u|s|mark)(?:\s+style="([^"]*)")?>(.*?)</\1>',
+    dotAll: true,
+  );
 
   @override
   InlineSpan span(
@@ -36,12 +36,7 @@ class HtmlTagMd extends InlineMd {
     final conf = config.copyWith(style: parsedStyle);
 
     return TextSpan(
-      children: MarkdownComponent.generate(
-        context,
-        content,
-        conf,
-        false,
-      ),
+      children: MarkdownComponent.generate(context, content, conf, false),
       style: parsedStyle,
     );
   }
