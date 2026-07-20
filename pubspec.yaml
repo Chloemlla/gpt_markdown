@@ -2,15 +2,17 @@ name: gpt_markdown_chloemlla
 description: "Powerful Flutter Markdown & LaTeX Renderer: Rich Text, Math, Tables, Links, and Text Selection. Ideal for ChatGPT, Gemini, and more."
 version: '2.0.0'
 homepage: https://github.com/Chloemlla/gpt_markdown
+repository: https://github.com/Chloemlla/gpt_markdown
+issue_tracker: https://github.com/Chloemlla/gpt_markdown/issues
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
-  flutter: ">=3.35.0"
+  flutter: ">=3.0.0"
 
 dependencies:
   flutter:
     sdk: flutter
-  flutter_math_fork: ^0.7.3
+  flutter_math_fork: ^0.7.4
   csslib: ^1.0.2
 
 dev_dependencies:
@@ -32,13 +34,3 @@ topics:
   - selectable
   - chatgpt
   - gemini
-
-keywords:
-  - flutter
-  - markdown
-  - flutter markdown
-  - gpt
-  - latex
-  - chatgpt
-  - rich text
-  - ai

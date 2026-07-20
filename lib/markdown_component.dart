@@ -221,7 +221,8 @@ class HTag extends BlockMd {
             conf,
             false,
           )),
-          if (match.namedGroup('hash')!.length == 1) ...[
+          if (match.namedGroup('hash')!.length == 1 &&
+              theme.autoAddDividerLineAfterH1) ...[
             const TextSpan(
               text: "\n ",
               style: TextStyle(fontSize: 0, height: 0),
@@ -229,9 +230,8 @@ class HTag extends BlockMd {
             WidgetSpan(
               child: CustomDivider(
                 height: theme.hrLineThickness,
-                color:
-                    config.style?.color ??
-                    Theme.of(context).colorScheme.outline,
+                color: theme.hrLineColor,
+                padding: theme.hrLinePadding,
               ),
             ),
           ],
@@ -271,11 +271,11 @@ class HrLine extends BlockMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    var thickness = GptMarkdownTheme.of(context).hrLineThickness;
-    var color = GptMarkdownTheme.of(context).hrLineColor;
+    final gptTheme = GptMarkdownTheme.of(context);
     return CustomDivider(
-      height: thickness,
-      color: config.style?.color ?? color,
+      height: gptTheme.hrLineThickness,
+      color: gptTheme.hrLineColor,
+      padding: gptTheme.hrLinePadding,
     );
   }
 }
@@ -499,7 +499,8 @@ class HighlightedText extends InlineMd {
 /// Bold text component
 class BoldMd extends InlineMd {
   @override
-  RegExp get exp => RegExp(r"(?<!\*)\*\*(?<!\s)(.+?)(?<!\s)\*\*(?!\*)");
+  RegExp get exp =>
+      RegExp(r"(?<!\*)\*\*(?<!\s)(.+?)(?<!\s)\*\*(?!\*)", dotAll: true);
 
   @override
   InlineSpan span(
@@ -782,7 +783,7 @@ class SourceTag extends InlineMd {
 /// Link text component
 class ATagMd extends InlineMd {
   @override
-  RegExp get exp => RegExp(r"(?<!\!)\[.*\]\([^\s]*\)");
+  RegExp get exp => RegExp(r"(?<!\!)\[.*?\]\([^\s]*\)");
 
   @override
   InlineSpan span(
@@ -856,17 +857,26 @@ class ATagMd extends InlineMd {
       false,
     );
     var theme = GptMarkdownTheme.of(context);
-    var linkTextSpan = TextSpan(
-      children: MarkdownComponent.generate(context, linkText, config, false),
-      style: config.style?.copyWith(
-        color: theme.linkColor,
-        decorationColor: theme.linkColor,
-      ),
-    );
 
     // Use custom builder if provided
     WidgetSpan? child;
     if (builder != null) {
+      // Build a styled span to hand off to the custom linkBuilder.
+      final linkStyle = (config.style ?? const TextStyle()).copyWith(
+        color: theme.linkColor,
+        decorationColor: theme.linkColor,
+        decoration: TextDecoration.underline,
+      );
+      final linkConfig = config.copyWith(style: linkStyle);
+      final linkTextSpan = TextSpan(
+        children: MarkdownComponent.generate(
+          context,
+          linkText,
+          linkConfig,
+          false,
+        ),
+        style: linkStyle,
+      );
       child = WidgetSpan(
         baseline: TextBaseline.alphabetic,
         alignment: PlaceholderAlignment.baseline,
@@ -882,7 +892,8 @@ class ATagMd extends InlineMd {
       );
     }
 
-    // Default rendering
+    // Default rendering — LinkButton rebuilds the span on every hover change
+    // so bold/italic text inside a link also picks up the hover colour.
     child ??= WidgetSpan(
       alignment: PlaceholderAlignment.baseline,
       baseline: TextBaseline.alphabetic,
@@ -894,7 +905,22 @@ class ATagMd extends InlineMd {
         },
         text: linkText,
         config: config,
-        child: config.getRich(linkTextSpan),
+        spanBuilder: (color) {
+          final spanStyle = (config.style ?? const TextStyle()).copyWith(
+            color: color,
+            decorationColor: color,
+            decoration: TextDecoration.underline,
+          );
+          return TextSpan(
+            children: MarkdownComponent.generate(
+              context,
+              linkText,
+              config.copyWith(style: spanStyle),
+              false,
+            ),
+            style: spanStyle,
+          );
+        },
       ),
     );
     var textSpan = TextSpan(children: [child, ...endingSpans]);
@@ -959,7 +985,7 @@ class ImageMd extends InlineMd {
 
     final Widget image;
     if (config.imageBuilder != null) {
-      image = config.imageBuilder!(context, url);
+      image = config.imageBuilder!(context, url, width, height);
     } else {
       image = SizedBox(
         width: width,
