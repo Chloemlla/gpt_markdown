@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gpt_markdown_chloemlla/custom_widgets/bidi_rich_text.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// A builder function for the ordered list.
@@ -212,7 +213,23 @@ class GptMarkdownConfig {
   }
 
   /// A method to get a rich text widget from an inline span.
-  Text getRich(InlineSpan span) {
+  ///
+  /// Paragraphs that mix right-to-left text with two or more inline widgets
+  /// (LaTeX, images, links) are rendered with [BidiText], which works around
+  /// https://github.com/flutter/flutter/issues/54400 — the engine otherwise
+  /// lays those inline widgets out left to right and they come out reversed.
+  /// Everything else keeps using a plain [Text].
+  Widget getRich(InlineSpan span) {
+    if (needsBidiPlaceholderFix(span)) {
+      return BidiText(
+        span,
+        textDirection: textDirection,
+        textScaler: textScaler,
+        textAlign: textAlign,
+        maxLines: maxLines,
+        overflow: overflow,
+      );
+    }
     return Text.rich(
       span,
       textDirection: textDirection,

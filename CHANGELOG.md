@@ -1,3 +1,8 @@
+## Unreleased
+
+* 🔡 Fixed inline widgets (LaTeX, images, links) rendering in reverse order when a paragraph mixes right-to-left text with two or more of them — e.g. `واحد $two^2$ ثلاثة أربعة five ستة سبعة $eight^8$` used to swap the two formulas. This works around [flutter/flutter#54400](https://github.com/flutter/flutter/issues/54400), where the engine fills a line's inline-placeholder slots left to right in logical order regardless of the line's direction. Affected paragraphs now render through `BidiText`, which computes the correct visual order per line with the Unicode bidi reordering rule (UAX #9, L2); everything else keeps using a plain `Text`.
+* `GptMarkdownConfig.getRich` now returns `Widget` instead of `Text`.
+
 ## 1.1.8
 
 * 🔗 Fixed consecutive links separated by single newlines not rendering ([#142](https://github.com/Infinitix-LLC/gpt_markdown/issues/142)).
