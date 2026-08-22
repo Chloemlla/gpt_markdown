@@ -16,7 +16,7 @@ class GptMarkdown extends StatelessWidget {
     this.latexBuilder,
     this.codeBuilder,
     this.sourceTagBuilder,
-    this.highlightBuilder,
+    this.inlineCodeBuilder,
     this.linkBuilder,
     this.maxLines,
     this.overflow,
@@ -25,6 +25,10 @@ class GptMarkdown extends StatelessWidget {
     this.tableBuilder,
     this.components,
     this.inlineComponents,
+    this.inlinePatterns,
+    this.inlineCodeStyle,
+    this.autolink = true,
+    this.autolinkSchemes = const <String>{},
     this.useDollarSignsForLatex = false,
   });
 
@@ -65,8 +69,12 @@ class GptMarkdown extends StatelessWidget {
   /// The source tag builder.
   final SourceTagBuilder? sourceTagBuilder;
 
-  /// The highlight builder.
-  final HighlightBuilder? highlightBuilder;
+  /// Builds the span for inline `` `code` ``, replacing the default chip.
+  ///
+  /// Reach for [inlineCodeStyle] first — it covers font, colours, outline,
+  /// radius and padding without a builder. Use this when the styling has to
+  /// depend on the code itself.
+  final InlineCodeBuilder? inlineCodeBuilder;
 
   /// The link builder.
   final LinkBuilder? linkBuilder;
@@ -130,6 +138,68 @@ class GptMarkdown extends StatelessWidget {
   /// ```
   final List<MarkdownComponent>? inlineComponents;
 
+  /// App-specific inline syntaxes rendered alongside Markdown.
+  ///
+  /// Use this for tokens Markdown does not define — `@mention`, `#channel`,
+  /// `:emoji:`. Patterns are matched ahead of the built-in components, and by
+  /// default do not apply inside link labels.
+  ///
+  /// ```dart
+  /// GptMarkdown(
+  ///   text,
+  ///   inlinePatterns: [
+  ///     InlinePattern.prefixed(
+  ///       prefix: '#',
+  ///       knownNames: channelNames,
+  ///       builder: (context, match, style) =>
+  ///           WidgetSpan(child: ChannelChip(match.group(0)!)),
+  ///     ),
+  ///   ],
+  /// )
+  /// ```
+  ///
+  /// Prefer building a [TextSpan] over a [WidgetSpan] where the design allows
+  /// it: a [TextSpan] stays selectable, wraps across lines, and sits on the
+  /// surrounding baseline.
+  final List<InlinePattern>? inlinePatterns;
+
+  /// How inline `code` is drawn, for this widget only.
+  ///
+  /// Null fields fall back to the ambient [ColorScheme], so a single field is
+  /// enough:
+  ///
+  /// ```dart
+  /// GptMarkdown(
+  ///   text,
+  ///   inlineCodeStyle: const InlineCodeStyle(fontFamily: 'GeistMono'),
+  /// )
+  /// ```
+  ///
+  /// Set [GptMarkdownThemeData.inlineCode] instead to restyle the whole app.
+  final InlineCodeStyle? inlineCodeStyle;
+
+  /// Whether bare URLs, `www.` hosts, email addresses and `<...>` autolinks
+  /// become links. Defaults to true.
+  ///
+  /// Bare autolinks follow the GFM autolink extension; `<...>` autolinks follow
+  /// CommonMark §6.5. Turn this off to render URLs as plain text — for
+  /// untrusted input where an accidental tap target is unwelcome.
+  final bool autolink;
+
+  /// Extra URL schemes linked **without** `<>`.
+  ///
+  /// `http`, `https`, `mailto` and `xmpp` are always linked. Anything else has
+  /// to be opted into, because a bare `foo://bar` in prose is usually not meant
+  /// as a link:
+  ///
+  /// ```dart
+  /// GptMarkdown(text, autolinkSchemes: const {'myapp'})
+  /// ```
+  ///
+  /// This does not affect `<...>` autolinks, which accept any scheme as
+  /// CommonMark specifies — the author wrote the brackets deliberately.
+  final Set<String> autolinkSchemes;
+
   /// A method to remove extra lines inside block LaTeX.
   // String _removeExtraLinesInsideBlockLatex(String text) {
   //   return text.replaceAllMapped(
@@ -163,32 +233,54 @@ class GptMarkdown extends StatelessWidget {
       }
     }
     // tex = _removeExtraLinesInsideBlockLatex(tex);
-    return ClipRRect(
-      child: MdWidget(
-        context,
-        tex,
-        true,
-        config: GptMarkdownConfig(
-          textDirection: textDirection,
-          style: style,
-          onLinkTap: onLinkTap,
-          textAlign: textAlign,
-          textScaler: textScaler,
-          followLinkColor: followLinkColor,
-          latexWorkaround: latexWorkaround,
-          latexBuilder: latexBuilder,
-          codeBuilder: codeBuilder,
-          maxLines: maxLines,
-          overflow: overflow,
-          sourceTagBuilder: sourceTagBuilder,
-          highlightBuilder: highlightBuilder,
-          linkBuilder: linkBuilder,
-          imageBuilder: imageBuilder,
-          orderedListBuilder: orderedListBuilder,
-          unOrderedListBuilder: unOrderedListBuilder,
-          components: components,
-          inlineComponents: inlineComponents,
-          tableBuilder: tableBuilder,
+    // An explicit `textScaler` has to reach the inline widgets too: they
+    // compensate for the paragraph's scaling of their box, and to do that they
+    // need the same scaler the paragraph uses. Publishing it through
+    // `MediaQuery` keeps one source of truth.
+    final scaler = textScaler;
+    Widget wrap(Widget child) {
+      if (scaler == null) {
+        return child;
+      }
+      return MediaQuery(
+        data: MediaQuery.of(context).copyWith(textScaler: scaler),
+        child: child,
+      );
+    }
+
+    return wrap(
+      ClipRRect(
+        child: MdWidget(
+          context,
+          tex,
+          true,
+          isRoot: true,
+          config: GptMarkdownConfig(
+            textDirection: textDirection,
+            style: style,
+            onLinkTap: onLinkTap,
+            textAlign: textAlign,
+            textScaler: textScaler,
+            followLinkColor: followLinkColor,
+            latexWorkaround: latexWorkaround,
+            latexBuilder: latexBuilder,
+            codeBuilder: codeBuilder,
+            maxLines: maxLines,
+            overflow: overflow,
+            sourceTagBuilder: sourceTagBuilder,
+            inlineCodeBuilder: inlineCodeBuilder,
+            linkBuilder: linkBuilder,
+            imageBuilder: imageBuilder,
+            orderedListBuilder: orderedListBuilder,
+            unOrderedListBuilder: unOrderedListBuilder,
+            components: components,
+            inlineComponents: inlineComponents,
+            inlinePatterns: inlinePatterns,
+            inlineCodeStyle: inlineCodeStyle,
+            autolink: autolink,
+            autolinkSchemes: autolinkSchemes,
+            tableBuilder: tableBuilder,
+          ),
         ),
       ),
     );

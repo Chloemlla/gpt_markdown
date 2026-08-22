@@ -25,3 +25,7 @@ coverage/
 # Ignore temporary files
 *.log
 *.tmp
+
+# Tooling that should not ship to pub.dev.
+widgetbook/
+doc/
