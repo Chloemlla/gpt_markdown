@@ -26,6 +26,7 @@ example/windows/flutter/generated_plugins.cmake
 # Development surfaces. Useful in the repository, not to consumers.
 widgetbook/
 scripts/
+tool/
 .github/
 
 # Website and local workspace surfaces are published independently.

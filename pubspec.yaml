@@ -7,7 +7,8 @@ issue_tracker: https://github.com/Chloemlla/gpt_markdown/issues
 
 environment:
   sdk: '>=3.7.0 <4.0.0'
-  flutter: ">=3.0.0"
+  # RadioGroup, used by the radio list marker, was added in 3.32.
+  flutter: ">=3.32.0"
 
 dependencies:
   flutter:
