@@ -9,6 +9,10 @@
 #   may not be today. That is why `score.sh` also runs on a weekly schedule.
 # * `publish-dry` catches what pana does not: oversized archives, files that
 #   are committed but gitignored, layout conventions.
+# * `release` is the only recipe with an outward effect. It re-runs the gate,
+#   refuses a dirty tree or a changelog with no heading for the version in
+#   pubspec.yaml, then prompts before pushing the tag. Pushing the tag is what
+#   publishes to pub.dev — the publish workflow triggers on nothing else.
 
 _default:
     @just --list --unsorted
@@ -30,7 +34,7 @@ score-report:
 publish-dry:
     flutter pub publish --dry-run
 
-# Format, analyse and test the package and both apps. CI runs this exact script.
+# Format, analyse and test the package and all three apps. CI runs this script.
 check:
     ./scripts/check.sh
 
@@ -40,3 +44,7 @@ fix:
 
 # Everything a release needs to pass, ordered to fail fastest.
 release-check: check publish-dry score
+
+# Ship it. Verifies, then asks before tagging; CI publishes from the tag.
+release:
+    ./scripts/release.sh
