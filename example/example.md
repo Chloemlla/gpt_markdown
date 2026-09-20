@@ -2,7 +2,7 @@
 
 Markdown and LaTeX rendering for Flutter, built for AI chat output.
 
-Full guides live in [`docs/`](https://github.com/Infinitix-LLC/gpt_markdown/tree/main/docs).
+Full guides live in [`docs/`](https://github.com/useval/gpt_markdown/tree/main/docs).
 Run `flutter run` in `example/` for the interactive demos.
 
 ---
@@ -219,8 +219,8 @@ GptMarkdown(reply, autolink: false)
 
 | | |
 |---|---|
-| [Getting started](https://github.com/Infinitix-LLC/gpt_markdown/blob/main/docs/getting-started.md) | Install, syntax, taps, LaTeX, RTL |
-| [Customization](https://github.com/Infinitix-LLC/gpt_markdown/blob/main/docs/customization.md) | Every style field and builder |
-| [Streaming](https://github.com/Infinitix-LLC/gpt_markdown/blob/main/docs/streaming.md) | Pacing, performance, limitations |
-| [Inline syntax](https://github.com/Infinitix-LLC/gpt_markdown/blob/main/docs/inline-syntax.md) | Autolinks, patterns, scopes |
+| [Getting started](https://github.com/useval/gpt_markdown/blob/main/docs/getting-started.md) | Install, syntax, taps, LaTeX, RTL |
+| [Customization](https://github.com/useval/gpt_markdown/blob/main/docs/customization.md) | Every style field and builder |
+| [Streaming](https://github.com/useval/gpt_markdown/blob/main/docs/streaming.md) | Pacing, performance, limitations |
+| [Inline syntax](https://github.com/useval/gpt_markdown/blob/main/docs/inline-syntax.md) | Autolinks, patterns, scopes |
 | [Playground](https://gptmarkdown.com/playground) | Try it in the browser |

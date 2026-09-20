@@ -130,7 +130,7 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## 1.1.8
 
-* 🔗 Fixed consecutive links separated by single newlines not rendering ([#142](https://github.com/Infinitix-LLC/gpt_markdown/issues/142)).
+* 🔗 Fixed consecutive links separated by single newlines not rendering ([#142](https://github.com/useval/gpt_markdown/issues/142)).
 
 ## 1.1.7
 
@@ -157,10 +157,10 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## 1.1.4
 
-* 🔗 Fixed vertical alignment issue with link text rendering ([#92](https://github.com/Infinitix-LLC/gpt_markdown/issues/92))
-* 📝 Resolved "null" rendering issue in ordered lists with multiple spaces and line breaks ([#89](https://github.com/Infinitix-LLC/gpt_markdown/issues/89))
-* 🧹 Removed erroneous `trim()` from `CodeBlockMd` to preserve necessary whitespace in code blocks ([#99](https://github.com/Infinitix-LLC/gpt_markdown/issues/99))
-* 🎨 Fixed heading style customization issue where custom colors in heading styles were not being applied ([#95](https://github.com/Infinitix-LLC/gpt_markdown/issues/95))
+* 🔗 Fixed vertical alignment issue with link text rendering ([#92](https://github.com/useval/gpt_markdown/issues/92))
+* 📝 Resolved "null" rendering issue in ordered lists with multiple spaces and line breaks ([#89](https://github.com/useval/gpt_markdown/issues/89))
+* 🧹 Removed erroneous `trim()` from `CodeBlockMd` to preserve necessary whitespace in code blocks ([#99](https://github.com/useval/gpt_markdown/issues/99))
+* 🎨 Fixed heading style customization issue where custom colors in heading styles were not being applied ([#95](https://github.com/useval/gpt_markdown/issues/95))
 
 ## 1.1.3
 
@@ -169,7 +169,7 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## 1.1.2
 
-* 📊 Fixed table column alignment support ([#65](https://github.com/Infinitix-LLC/gpt_markdown/issues/65))
+* 📊 Fixed table column alignment support ([#65](https://github.com/useval/gpt_markdown/issues/65))
 * 🎨 Added `tableBuilder` parameter to customize table rendering
 * 🔗 Fixed text decoration color of link markdown component
 
@@ -184,7 +184,7 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## 1.0.20
 
-* Fix: support balanced parentheses in image and link URLs. [#68](https://github.com/Infinitix-LLC/gpt_markdown/pull/68)
+* Fix: support balanced parentheses in image and link URLs. [#68](https://github.com/useval/gpt_markdown/pull/68)
 
 ## 1.0.19
 
@@ -216,7 +216,7 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 
 ## 1.0.13
 
-* Fixed issue [#49](https://github.com/Infinitix-LLC/gpt_markdown/issues/49).
+* Fixed issue [#49](https://github.com/useval/gpt_markdown/issues/49).
 
 ## 1.0.12
 
@@ -246,7 +246,7 @@ Upgrading from 1.1.x? See [MIGRATION.md](MIGRATION.md).
 ## 1.0.6
 
 * `_italic_` and `>Indentation` syntax added.
-* `linkBuilder` and `highlightBuilder` added [f45132b](https://github.com/Infinitix-LLC/gpt_markdown/commit/f45132b2cd4b069d3e5703561deb5c7e51d3c560).
+* `linkBuilder` and `highlightBuilder` added [f45132b](https://github.com/useval/gpt_markdown/commit/f45132b2cd4b069d3e5703561deb5c7e51d3c560).
 
 ## 1.0.5
 
