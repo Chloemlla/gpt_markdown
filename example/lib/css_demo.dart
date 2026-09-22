@@ -1,3 +1,12 @@
+// The CSS support rides the legacy component pipeline: `HtmlTagMd` is an
+// `InlineMd`, and the CSS-aware components are spread into the legacy
+// `components` / `inlineComponents` lists. Every `GptMarkdown` call below is
+// therefore deliberately on the deprecated path; moving to `blockComponents` /
+// `inlineDirectives` is a feature change, not a rename — an html tag with a
+// style attribute is exactly the "delimited payload" `InlineDirective` exists
+// for, so porting `HtmlTagMd` onto it is the follow-up.
+// ignore_for_file: deprecated_member_use
+
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 import 'package:gpt_markdown_chloemlla/css/css.dart';
