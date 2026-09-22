@@ -32,7 +32,10 @@ class CssTheme {
     final properties = _stylesheet.getStylesForSelector(selector);
     if (properties.isEmpty) return baseStyle;
 
-    final style = CssParser.parsePropertiesMap(properties, baseStyle: baseStyle);
+    final style = CssParser.parsePropertiesMap(
+      properties,
+      baseStyle: baseStyle,
+    );
     _styleCache[cacheKey] = style ?? baseStyle ?? const TextStyle();
     return style;
   }
@@ -65,7 +68,10 @@ class CssTheme {
       h6Style: getTextStyle('.markdown-body h6', baseStyle: baseStyle),
       pStyle: getTextStyle('.markdown-body p', baseStyle: baseStyle),
       codeStyle: getTextStyle('.markdown-body code', baseStyle: baseStyle),
-      blockquoteStyle: getTextStyle('.markdown-body blockquote', baseStyle: baseStyle),
+      blockquoteStyle: getTextStyle(
+        '.markdown-body blockquote',
+        baseStyle: baseStyle,
+      ),
       linkStyle: getTextStyle('.markdown-body a', baseStyle: baseStyle),
       strongStyle: getTextStyle('.markdown-body strong', baseStyle: baseStyle),
       emStyle: getTextStyle('.markdown-body em', baseStyle: baseStyle),
@@ -96,8 +102,9 @@ class CssTheme {
 
     // RGB/RGBA
     if (colorString.startsWith('rgb')) {
-      final match = RegExp(r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)')
-          .firstMatch(colorString);
+      final match = RegExp(
+        r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)',
+      ).firstMatch(colorString);
       if (match != null) {
         final r = int.parse(match.group(1)!);
         final g = int.parse(match.group(2)!);

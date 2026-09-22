@@ -131,11 +131,14 @@ class CssStylesheet {
 
     // Remove pseudo-classes and pseudo-elements for basic matching
     ruleSelector = ruleSelector.replaceAll(RegExp(r'::[a-z-]+'), '');
-    ruleSelector = ruleSelector.replaceAll(RegExp(r':[a-z-]+(?:\([^)]*\))?'), '');
+    ruleSelector = ruleSelector.replaceAll(
+      RegExp(r':[a-z-]+(?:\([^)]*\))?'),
+      '',
+    );
 
     return ruleSelector == targetSelector ||
-           ruleSelector.contains(targetSelector) ||
-           targetSelector.contains(ruleSelector);
+        ruleSelector.contains(targetSelector) ||
+        targetSelector.contains(ruleSelector);
   }
 
   String _selectorToString(css.Selector selector) {

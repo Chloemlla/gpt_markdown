@@ -88,7 +88,9 @@ class CssParser {
 
     // Parse font-family
     if (properties.containsKey('font-family')) {
-      fontFamily = properties['font-family']!.replaceAll('"', '').replaceAll("'", '');
+      fontFamily = properties['font-family']!
+          .replaceAll('"', '')
+          .replaceAll("'", '');
     }
 
     return (baseStyle ?? const TextStyle()).copyWith(
@@ -124,8 +126,9 @@ class CssParser {
 
     // RGB/RGBA
     if (colorString.startsWith('rgb')) {
-      final match = RegExp(r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)')
-          .firstMatch(colorString);
+      final match = RegExp(
+        r'rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([\d.]+))?\)',
+      ).firstMatch(colorString);
       if (match != null) {
         final r = int.parse(match.group(1)!);
         final g = int.parse(match.group(2)!);

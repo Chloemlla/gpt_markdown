@@ -43,7 +43,9 @@ void main() {
       ''';
 
       final stylesheet = CssStylesheet.parse(cssContent);
-      final resolved = stylesheet.resolveCssVariables('var(--missing-color, #000000)');
+      final resolved = stylesheet.resolveCssVariables(
+        'var(--missing-color, #000000)',
+      );
 
       expect(resolved, equals('#000000'));
     });

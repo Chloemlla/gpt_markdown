@@ -115,17 +115,23 @@ class _CssStylesheetDemoState extends State<CssStylesheetDemo> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Heading 1', style: theme.getTextStyle('.markdown-body h1')),
+                Text('Heading 1',
+                    style: theme.getTextStyle('.markdown-body h1')),
                 const SizedBox(height: 8),
-                Text('Heading 2', style: theme.getTextStyle('.markdown-body h2')),
+                Text('Heading 2',
+                    style: theme.getTextStyle('.markdown-body h2')),
                 const SizedBox(height: 8),
-                Text('Heading 3', style: theme.getTextStyle('.markdown-body h3')),
+                Text('Heading 3',
+                    style: theme.getTextStyle('.markdown-body h3')),
                 const SizedBox(height: 8),
-                Text('Heading 4', style: theme.getTextStyle('.markdown-body h4')),
+                Text('Heading 4',
+                    style: theme.getTextStyle('.markdown-body h4')),
                 const SizedBox(height: 8),
-                Text('Heading 5', style: theme.getTextStyle('.markdown-body h5')),
+                Text('Heading 5',
+                    style: theme.getTextStyle('.markdown-body h5')),
                 const SizedBox(height: 8),
-                Text('Heading 6', style: theme.getTextStyle('.markdown-body h6')),
+                Text('Heading 6',
+                    style: theme.getTextStyle('.markdown-body h6')),
               ],
             ),
           ),
@@ -168,14 +174,18 @@ class _CssStylesheetDemoState extends State<CssStylesheetDemo> {
             Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildColorRow('Background', theme.getColor('--bgColor-default')),
-                _buildColorRow('Foreground', theme.getColor('--fgColor-default')),
+                _buildColorRow(
+                    'Background', theme.getColor('--bgColor-default')),
+                _buildColorRow(
+                    'Foreground', theme.getColor('--fgColor-default')),
                 _buildColorRow('Accent', theme.getColor('--fgColor-accent')),
                 _buildColorRow('Muted', theme.getColor('--fgColor-muted')),
-                _buildColorRow('Border', theme.getColor('--borderColor-default')),
+                _buildColorRow(
+                    'Border', theme.getColor('--borderColor-default')),
                 _buildColorRow('Success', theme.getColor('--fgColor-success')),
                 _buildColorRow('Danger', theme.getColor('--fgColor-danger')),
-                _buildColorRow('Attention', theme.getColor('--fgColor-attention')),
+                _buildColorRow(
+                    'Attention', theme.getColor('--fgColor-attention')),
               ],
             ),
           ),
