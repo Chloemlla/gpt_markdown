@@ -4,7 +4,7 @@
 
 ```yaml
 dependencies:
-  gpt_markdown: ^1.2.0
+  gpt_markdown: ^1.3.0
 ```
 
 ```dart
@@ -56,7 +56,7 @@ ListView.builder(
 |---|---|
 | Headings | `#` to `######` |
 | Emphasis | `**bold**`, `*italic*`, `~~strike~~`, `<u>underline</u>` |
-| Code | `` `inline` ``, ```` ```fenced``` ```` |
+| Code | `` `inline` ``, language-tagged highlighted fences |
 | Lists | `-`, `1.`, nested |
 | Tasks | `- [x]`, `- [ ]` |
 | Options | `(x)`, `( )` |
@@ -70,6 +70,17 @@ ListView.builder(
 
 Bare URLs, `www.` hosts and email addresses are linked automatically — see
 [inline syntax](inline-syntax.md).
+
+Fenced code is highlighted automatically when it carries a language tag:
+
+````markdown
+```dart
+final greeting = 'Hello';
+```
+````
+
+Unknown or omitted languages remain readable as plain code. See
+[code-block customization](customization.md#syntax-highlighting).
 
 ---
 
@@ -112,8 +123,9 @@ GptMarkdown(
 
 ## Text style
 
-The surrounding style comes from `style`, and everything else derives from it —
-heading sizes, inline code size, list bullet size.
+The surrounding style comes from `style`; inline code size and list marker size
+derive from it. Heading sizes do not: each level takes its style from
+`GptMarkdownThemeData`'s `h1` to `h6`, which default to the Material text theme.
 
 ```dart
 GptMarkdown(
@@ -130,8 +142,8 @@ GptMarkdown(
 ```
 
 > [!TIP]
-> Set the size **once**, here. Component styles use factors rather than
-> absolute sizes precisely so they follow it.
+> Set the body size **once**, here. Inline code and list bullets are sized as
+> factors of it rather than in absolute units, so they follow it.
 
 To restyle a component, see [customization](customization.md).
 
@@ -139,8 +151,14 @@ To restyle a component, see [customization](customization.md).
 
 ## LaTeX
 
-Maths needs a renderer. The package calls `latexBuilder`, so the engine is your
-choice — usually [`flutter_math_fork`](https://pub.dev/packages/flutter_math_fork).
+Maths renders with no configuration.
+[`flutter_math_fork`](https://pub.dev/packages/flutter_math_fork) is a
+dependency of the package, and the built-in renderer uses it — falling back to
+the raw TeX as text when a formula will not parse.
+
+`latexBuilder` replaces that renderer when you want a different engine, a
+different fallback, or a wrapper around the same one. The `inline` flag
+separates `\( … \)` from `\[ … \]`.
 
 ```dart
 GptMarkdown(
@@ -196,6 +214,12 @@ GptMarkdown(reply, useDollarSignsForLatex: true)
 GptMarkdown(reply, textDirection: TextDirection.rtl)
 ```
 
+`textDirection` defaults to `TextDirection.ltr` and nothing reads the ambient
+`Directionality`, so an RTL app passes it here. It governs block layout as well
+as text — the document is wrapped in a `Directionality`, so lists, headings and
+quotes take their leading edge from it even inside a page running the other
+way. Fenced code keeps its LTR reading order and scroll origin.
+
 Inline widgets — maths, images, links — are placed in the correct visual order
 in mixed-direction paragraphs, which the framework does not do on its own
 ([flutter#54400](https://github.com/flutter/flutter/issues/54400)).
@@ -211,9 +235,10 @@ SelectionArea(child: GptMarkdown(reply))
 ```
 
 > [!NOTE]
-> Copying across a list or table currently yields the cells run together, with
-> no separators — the block content is rendered as inline widgets. Prose,
-> headings, links and inline code copy correctly.
+> Copying across a block boundary currently yields the text run together, with
+> no separators. Every block — a paragraph, a list item, a table cell — is its
+> own text widget, and the framework concatenates what it selected from each
+> with nothing in between. Text inside one block copies as it reads.
 
 ---
 
@@ -230,9 +255,10 @@ SelectionArea(child: GptMarkdown(reply))
 > content height; constraining it without scrolling clips the reply.
 
 > [!TIP]
-> **Rendering a reply while it generates?** Do not rebuild the whole widget per
-> token — see [streaming](streaming.md), which measures 11 ms per token against
-> 14.6 ms for the naive path, and stays flat as the reply grows.
+> **Rendering a reply while it generates?** Rebuild only the active message
+> with the complete text received so far. The renderer caches the segments that
+> have settled, so append cost stays roughly flat as the reply grows. See
+> [streaming and performance](streaming.md#performance).
 
 ---
 
@@ -241,3 +267,4 @@ SelectionArea(child: GptMarkdown(reply))
 * Make it look like your app → [customization](customization.md)
 * Render a reply as it generates → [streaming](streaming.md)
 * `@mention`, `#channel`, autolinks → [inline syntax](inline-syntax.md)
+* Look up every constructor option → [`GptMarkdown` options](api-options.md)

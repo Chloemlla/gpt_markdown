@@ -1,3 +1,7 @@
+// This file defines the legacy regex pipeline's component types and its
+// built-in components. They are deprecated as a group, and they refer to one
+// another throughout, so the ignore is applied once for the whole file.
+// ignore_for_file: deprecated_member_use_from_same_package
 part of 'gpt_markdown_chloemlla.dart';
 
 /// The nesting context a [MarkdownComponent] is being rendered in.
@@ -54,6 +58,18 @@ abstract class MarkdownComponent {
   /// [allScopesExceptLinkLabel].
   Set<MarkdownScope> get scopes => allScopes;
 
+  /// The built-in block components of the legacy regex pipeline.
+  ///
+  /// This list exists to be spread into a custom `components` list, and
+  /// passing `components` selects the legacy pipeline: the document is
+  /// rendered as one text tree, with no incremental segment cache, no
+  /// span-level streaming reveal and no lazy sliver. A custom list also
+  /// replaces the built-ins wholesale — every component left out of it stops
+  /// rendering, which is why callers spread this list into their own.
+  ///
+  /// Register custom blocks with `blockComponents` instead, which keeps the
+  /// modern pipeline.
+  @Deprecated('Use blockComponents instead. Will be removed in 2.0.0.')
   static List<MarkdownComponent> get globalComponents => [
     CodeBlockMd(),
     LatexMathMultiLine(),
@@ -69,7 +85,21 @@ abstract class MarkdownComponent {
     IndentMd(),
   ];
 
+  /// The built-in inline components of the legacy regex pipeline.
+  ///
+  /// This list exists to be spread into a custom `inlineComponents` list, and
+  /// passing `inlineComponents` selects the legacy pipeline: the document is
+  /// rendered as one text tree, with no incremental segment cache, no
+  /// span-level streaming reveal and no lazy sliver. A custom list also
+  /// replaces the built-ins wholesale — every component left out of it stops
+  /// rendering, which is why callers spread this list into their own.
+  ///
+  /// Register custom inline syntax with `inlinePatterns`, or with
+  /// `inlineDirectives` for a delimited payload, instead; both keep the
+  /// modern pipeline.
+  @Deprecated('Use inlinePatterns instead. Will be removed in 2.0.0.')
   static final List<MarkdownComponent> inlineComponents = [
+    InlineDirectiveMd(),
     ATagMd(),
     ImageMd(),
     AutolinkMd(),
@@ -97,6 +127,27 @@ abstract class MarkdownComponent {
   /// palette), so the set of distinct patterns is not bounded by the package.
   /// The cache is dropped wholesale rather than grown without limit.
   static const int _combinedRegexCacheLimit = 64;
+  static final Map<(String, bool, bool, bool), RegExp> _anchoredRegexCache = {};
+
+  static RegExp _anchoredRegexFor(RegExp expression) {
+    final key = (
+      expression.pattern,
+      expression.isMultiLine,
+      expression.isDotAll,
+      expression.isCaseSensitive,
+    );
+    final cached = _anchoredRegexCache[key];
+    if (cached != null) return cached;
+    if (_anchoredRegexCache.length >= _combinedRegexCacheLimit) {
+      _anchoredRegexCache.clear();
+    }
+    return _anchoredRegexCache[key] = RegExp(
+      '^(?:${expression.pattern})\$',
+      multiLine: expression.isMultiLine,
+      dotAll: expression.isDotAll,
+      caseSensitive: expression.isCaseSensitive,
+    );
+  }
 
   static RegExp _combinedRegexFor(List<MarkdownComponent> components) {
     final pattern = components.map<String>((e) => e.exp.pattern).join("|");
@@ -163,16 +214,7 @@ abstract class MarkdownComponent {
       onMatch: (p0) {
         String element = p0[0] ?? "";
         for (var each in components) {
-          var p = each.exp.pattern;
-          // The group matters: `^a|b$` anchors only the first and last
-          // alternative, so any component whose pattern has a top-level `|`
-          // would claim matches it does not actually cover.
-          var exp = RegExp(
-            '^(?:$p)\$',
-            multiLine: each.exp.isMultiLine,
-            dotAll: each.exp.isDotAll,
-            caseSensitive: each.exp.isCaseSensitive,
-          );
+          final exp = _anchoredRegexFor(each.exp);
           if (exp.hasMatch(element)) {
             spans.add(each.span(context, element, config));
             return "";
@@ -217,7 +259,62 @@ abstract class MarkdownComponent {
   bool get inline;
 }
 
-/// Inline component
+/// Inline component of the legacy regex pipeline.
+///
+/// A subclass is reachable only through `inlineComponents`, which selects the
+/// legacy pipeline: the document is rendered as one text tree, with no
+/// incremental segment cache, no span-level streaming reveal and no lazy
+/// sliver, so a streaming reply re-parses and re-lays-out the whole message on
+/// every append. Use [InlinePattern] for host syntax that is still text, or
+/// [InlineDirective] for a delimited payload the parser must not read; both
+/// work on either pipeline.
+///
+/// Before:
+///
+/// ```dart
+/// class ShoutMd extends InlineMd {
+///   @override
+///   RegExp get exp => RegExp(r'!![A-Za-z]+!!');
+///
+///   @override
+///   InlineSpan span(
+///     BuildContext context,
+///     String text,
+///     GptMarkdownConfig config,
+///   ) {
+///     return TextSpan(
+///       text: text.replaceAll('!!', '').toUpperCase(),
+///       style: config.style?.copyWith(fontWeight: FontWeight.bold),
+///     );
+///   }
+/// }
+///
+/// GptMarkdown(
+///   text,
+///   inlineComponents: [ShoutMd(), ...MarkdownComponent.inlineComponents],
+/// )
+/// ```
+///
+/// After:
+///
+/// ```dart
+/// GptMarkdown(
+///   text,
+///   inlinePatterns: [
+///     InlinePattern(
+///       pattern: RegExp(r'!![A-Za-z]+!!'),
+///       builder: (context, match, style) => TextSpan(
+///         text: match[0]!.replaceAll('!!', '').toUpperCase(),
+///         style: style.copyWith(fontWeight: FontWeight.bold),
+///       ),
+///     ),
+///   ],
+/// )
+/// ```
+@Deprecated(
+  'Use InlinePattern, or InlineDirective for a delimited payload. '
+  'Will be removed in 2.0.0.',
+)
 abstract class InlineMd extends MarkdownComponent {
   @override
   bool get inline => true;
@@ -230,7 +327,118 @@ abstract class InlineMd extends MarkdownComponent {
   );
 }
 
-/// Block component
+/// A masked [InlineDirective], put back as the host's span.
+///
+/// The directive was lifted out of the source before parsing, leaving an inert
+/// sentinel; this is the regex pipeline's half of putting it back. Registered
+/// first so nothing else can claim the sentinel.
+///
+/// The modern pipeline unmasks directives itself, so no caller should name
+/// this type; [InlineDirective] is the API.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
+class InlineDirectiveMd extends InlineMd {
+  @override
+  Set<MarkdownScope> get scopes => MarkdownComponent.allScopes;
+
+  @override
+  RegExp get exp => RegExp(inlineDirectiveMaskPattern);
+
+  @override
+  InlineSpan span(
+    BuildContext context,
+    String text,
+    final GptMarkdownConfig config,
+  ) {
+    final directives = config.inlineDirectives;
+    final match = exp.firstMatch(text.trim());
+    final decoded =
+        match == null || directives == null
+            ? null
+            : decodeInlineDirectiveMask(match[0]!, directives.length);
+    if (decoded == null || directives == null) {
+      // A sentinel that is not one of this document's directives renders as
+      // the text it is, rather than being mistaken for a widget.
+      return TextSpan(text: text, style: config.style);
+    }
+    return _scaleInlineSpanWidgets(
+      directives[decoded.index].builder(
+        context,
+        decoded.payload,
+        config.style ?? const TextStyle(),
+      ),
+    );
+  }
+}
+
+/// Block component of the legacy regex pipeline.
+///
+/// A subclass is reachable only through `components`, which selects the legacy
+/// pipeline: the document is rendered as one text tree, with no incremental
+/// segment cache, no span-level streaming reveal and no lazy sliver, so a
+/// streaming reply re-parses and re-lays-out the whole message on every
+/// append. Register the block with [MarkdownBlockComponent] instead, using
+/// [FencedBlockSyntax] or a [MarkdownBlockSyntax] subclass for the syntax; the
+/// parsed node is cached, so a rebuild does not run the syntax again.
+///
+/// Before:
+///
+/// ```dart
+/// class CalloutMd extends BlockMd {
+///   @override
+///   String get expString => r':::(\w+)\n([\s\S]*?)\n:::';
+///
+///   @override
+///   Widget build(
+///     BuildContext context,
+///     String text,
+///     GptMarkdownConfig config,
+///   ) {
+///     final match = exp.firstMatch(text);
+///     return Row(
+///       children: [
+///         Icon(
+///           match?.group(1) == 'warning' ? Icons.warning : Icons.info,
+///         ),
+///         Flexible(child: Text(match?.group(2) ?? '')),
+///       ],
+///     );
+///   }
+/// }
+///
+/// GptMarkdown(
+///   text,
+///   components: [CalloutMd(), ...MarkdownComponent.globalComponents],
+/// )
+/// ```
+///
+/// After:
+///
+/// ```dart
+/// GptMarkdown(
+///   text,
+///   blockComponents: [
+///     MarkdownBlockComponent(
+///       syntax: const FencedBlockSyntax(
+///         type: 'callout',
+///         opening: ':::warning',
+///       ),
+///       builder: (context, node, config) => Row(
+///         children: [
+///           const Icon(Icons.warning),
+///           Flexible(child: Text(node.body)),
+///         ],
+///       ),
+///     ),
+///   ],
+/// )
+/// ```
+@Deprecated(
+  'Use MarkdownBlockComponent with blockComponents instead. '
+  'Will be removed in 2.0.0.',
+)
 abstract class BlockMd extends MarkdownComponent {
   @override
   bool get inline => false;
@@ -274,6 +482,14 @@ abstract class BlockMd extends MarkdownComponent {
 }
 
 /// Indent component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline handles indentation in its own block parser and never builds this
+/// component.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class IndentMd extends BlockMd {
   @override
   String get expString => (r"^(\ \ +)([^\n]+)$");
@@ -309,6 +525,13 @@ class IndentMd extends BlockMd {
 }
 
 /// Heading component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses headings itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class HTag extends BlockMd {
   @override
   String get expString => (r"(?<hash>#{1,6})\ (?<data>[^\n]+?)$");
@@ -318,82 +541,31 @@ class HTag extends BlockMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    var theme = GptMarkdownTheme.of(context);
     var match = this.exp.firstMatch(text.trim());
     final hashes = match?.namedGroup('hash');
-    final level = hashes == null ? 1 : hashes.length;
-    final headingStyle = (resolvedStyleSheet(context, config).heading ??
-            const HeadingStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final levelStyle =
-        [theme.h1, theme.h2, theme.h3, theme.h4, theme.h5, theme.h6][level - 1];
-    final override = headingStyle.textStyle;
-    var conf = config.copyWith(
-      scope: MarkdownScope.heading,
-      style:
-          override == null
-              ? levelStyle
-              : (levelStyle ?? const TextStyle()).merge(override),
-    );
-    final headingDividerPadding = headingStyle.dividerPadding;
-    final headingPadding = headingStyle.padding;
-
-    final headingBuilder = config.headingBuilder;
-    if (headingBuilder != null) {
-      final content = config.getRich(
-        TextSpan(
-          children: MarkdownComponent.generate(
+    return headingWidget(
+      context,
+      config,
+      level: hashes == null ? 1 : hashes.length,
+      buildChildren:
+          (conf) => MarkdownComponent.generate(
             context,
             "${match?.namedGroup('data')}",
             conf,
             false,
           ),
-        ),
-      );
-      return headingBuilder(context, level, content, headingStyle);
-    }
-
-    final rich = config.getRich(
-      TextSpan(
-        children: [
-          ...(MarkdownComponent.generate(
-            context,
-            "${match?.namedGroup('data')}",
-            conf,
-            false,
-          )),
-          if (level == 1 &&
-              (headingStyle.showDivider ??
-                  theme.autoAddDividerLineAfterH1)) ...[
-            const TextSpan(
-              text: "\n ",
-              style: TextStyle(fontSize: 0, height: 0),
-            ),
-            // Left uncompensated on purpose. The rule is a one-pixel
-            // decoration with no text in it, so the paragraph scaling its box
-            // is invisible — and compensating it made the space it takes at 1x
-            // differ from every other scale.
-            WidgetSpan(
-              child: CustomDivider(
-                height: headingStyle.dividerThickness ?? theme.hrLineThickness,
-                color: headingStyle.dividerColor ?? theme.hrLineColor,
-                padding:
-                    headingDividerPadding is EdgeInsets
-                        ? headingDividerPadding
-                        : theme.hrLinePadding,
-              ),
-            ),
-          ],
-        ],
-      ),
     );
-    if (headingPadding == null) {
-      return rich;
-    }
-    return Padding(padding: headingPadding, child: rich);
   }
 }
 
+/// Blank-line separator of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline splits blocks itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class NewLines extends InlineMd {
   @override
   RegExp get exp => RegExp(r"\n\n+");
@@ -415,6 +587,13 @@ class NewLines extends InlineMd {
 }
 
 /// Horizontal line component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses horizontal rules itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class HrLine extends BlockMd {
   @override
   String get expString => (r"⸻|((--)[-]+)$");
@@ -424,23 +603,18 @@ class HrLine extends BlockMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    final gptTheme = GptMarkdownTheme.of(context);
-    final style = (resolvedStyleSheet(context, config).hr ?? const HrStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final builder = config.hrBuilder;
-    if (builder != null) {
-      return builder(context, style);
-    }
-    final padding = style.padding;
-    return CustomDivider(
-      height: style.thickness ?? gptTheme.hrLineThickness,
-      color: style.color ?? gptTheme.hrLineColor,
-      padding: padding is EdgeInsets ? padding : gptTheme.hrLinePadding,
-    );
+    return hrWidget(context, config);
   }
 }
 
 /// Checkbox component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses task list items itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class CheckBoxMd extends BlockMd {
   @override
   String get expString => (r"\[((?:\x|\ ))\]\ (\S[^\n]*?)$");
@@ -452,27 +626,23 @@ class CheckBoxMd extends BlockMd {
     final GptMarkdownConfig config,
   ) {
     var match = this.exp.firstMatch(text.trim());
-    final style = (resolvedStyleSheet(context, config).checkbox ??
-            const CheckboxStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final checked = "${match?[1]}" == "x";
-    final label = MdWidget(context, "${match?[2]}", false, config: config);
-    final builder = config.checkboxBuilder;
-    if (builder != null) {
-      return builder(context, checked, label, style);
-    }
-    return CustomCb(
-      value: checked,
-      textDirection: config.textDirection,
-      spacing: style.gapAfterBox ?? 5,
-      style: style,
-      onChanged: config.onCheckboxChanged,
-      child: label,
+    return checkboxWidget(
+      context,
+      config,
+      checked: "${match?[1]}" == "x",
+      label: MdWidget(context, "${match?[2]}", false, config: config),
     );
   }
 }
 
 /// Radio Button component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses radio options itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class RadioButtonMd extends BlockMd {
   @override
   String get expString => (r"\(((?:\x|\ ))\)\ (\S[^\n]*)$");
@@ -484,35 +654,29 @@ class RadioButtonMd extends BlockMd {
     final GptMarkdownConfig config,
   ) {
     var match = this.exp.firstMatch(text.trim());
-    final style = (resolvedStyleSheet(context, config).checkbox ??
-            const CheckboxStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final selected = "${match?[1]}" == "x";
-    final label = MdWidget(context, "${match?[2]}", false, config: config);
-    final builder = config.radioOptionBuilder;
-    if (builder != null) {
-      return builder(context, selected, label, style);
-    }
-    return CustomRb(
-      value: selected,
-      textDirection: config.textDirection,
-      spacing: style.gapAfterBox ?? 5,
-      style: style,
-      onChanged: config.onCheckboxChanged,
-      child: label,
+    return radioWidget(
+      context,
+      config,
+      selected: "${match?[1]}" == "x",
+      label: MdWidget(context, "${match?[2]}", false, config: config),
     );
   }
 }
 
 /// Block quote component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses block quotes itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class BlockQuote extends InlineMd {
   @override
   bool get inline => false;
 
   @override
-  RegExp get exp =>
-  // RegExp(r"(?<=\n\n)(\ +)(.+?)(?=\n\n)", dotAll: true, multiLine: true);
-  RegExp(
+  RegExp get exp => RegExp(
     r"(?:(?:^)\ *>[^\n]+)(?:(?:\n)\ *>[^\n]+)*",
     dotAll: true,
     multiLine: true,
@@ -539,83 +703,28 @@ class BlockQuote extends InlineMd {
       }
     }
     var data = dataBuilder.toString().trim();
-    var quotedConfig = config;
-    final style = (resolvedStyleSheet(context, config).blockQuote ??
-            const BlockQuoteStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final textStyle = style.textStyle;
-    if (textStyle != null) {
-      final base = config.style;
-      quotedConfig = config.copyWith(
-        style: base == null ? textStyle : base.merge(textStyle),
-      );
-    }
-    final content = quotedConfig.getRich(
-      TextSpan(
-        children: MarkdownComponent.generate(context, data, quotedConfig, true),
-      ),
+
+    return blockQuoteSpan(
+      context,
+      config,
+      buildContent:
+          (conf) => conf.getRich(
+            TextSpan(
+              children: MarkdownComponent.generate(context, data, conf, true),
+            ),
+          ),
     );
-
-    final builder = config.blockQuoteBuilder;
-    final Widget quote;
-    if (builder == null) {
-      quote = _defaultQuote(context, content, style, config.textDirection);
-    } else {
-      quote = builder(context, content, style);
-    }
-
-    return TextSpan(
-      children: [
-        scaledWidgetSpan(
-          config: config,
-          alignment: PlaceholderAlignment.bottom,
-          baseline: null,
-          child: quote,
-        ),
-      ],
-    );
-  }
-
-  Widget _defaultQuote(
-    BuildContext context,
-    Widget content,
-    BlockQuoteStyle style,
-    TextDirection direction,
-  ) {
-    final padding = style.padding;
-    final margin = style.margin;
-    final background = style.backgroundColor;
-    final barColor = style.barColor;
-    final barWidth = style.barWidth;
-
-    Widget child = content;
-    if (padding != null) {
-      child = Padding(padding: padding, child: child);
-    }
-    child = BlockQuoteWidget(
-      color: barColor ?? Theme.of(context).colorScheme.onSurfaceVariant,
-      direction: direction,
-      width: barWidth ?? 3,
-      child: child,
-    );
-    if (background != null) {
-      final radius = style.barRadius;
-      child = DecoratedBox(
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: radius == null ? null : BorderRadius.all(radius),
-        ),
-        child: child,
-      );
-    }
-    if (margin != null) {
-      child = Padding(padding: margin, child: child);
-    }
-    return Directionality(textDirection: direction, child: child);
   }
 }
 
 /// Unordered list component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses unordered lists itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class UnOrderedList extends BlockMd {
   @override
   String get expString => (r"(?:\-|\*)\ ([^\n]+)$");
@@ -630,41 +739,18 @@ class UnOrderedList extends BlockMd {
 
     var child = MdWidget(context, "${match?[1]?.trim()}", true, config: config);
 
-    return config.unOrderedListBuilder?.call(
-          context,
-          child,
-          config.copyWith(),
-        ) ??
-        _unorderedListView(context, config, child);
-  }
-
-  Widget _unorderedListView(
-    BuildContext context,
-    GptMarkdownConfig config,
-    Widget child,
-  ) {
-    final style = (resolvedStyleSheet(context, config).list ??
-            const ListStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final fontSize =
-        config.style?.fontSize ??
-        DefaultTextStyle.of(context).style.fontSize ??
-        kDefaultFontSize;
-    return UnorderedListView(
-      bulletColor:
-          style.bulletColor ??
-          config.style?.color ??
-          DefaultTextStyle.of(context).style.color,
-      padding: style.indent ?? 7,
-      spacing: style.gapAfterMarker ?? 10,
-      bulletSize: style.bulletSize ?? 0.3 * fontSize,
-      textDirection: config.textDirection,
-      child: child,
-    );
+    return unorderedListItem(context, config, child);
   }
 }
 
 /// Ordered list component
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses ordered lists itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class OrderedList extends BlockMd {
   @override
   String get expString => (r"([0-9]+)\.\ ([^\n]+)$");
@@ -680,41 +766,65 @@ class OrderedList extends BlockMd {
     var no = "${match?[1]}".trim();
 
     var child = MdWidget(context, "${match?[2]}".trim(), true, config: config);
-    return config.orderedListBuilder?.call(
-          context,
-          no,
-          child,
-          config.copyWith(),
-        ) ??
-        _orderedListView(context, config, no, child);
-  }
-
-  Widget _orderedListView(
-    BuildContext context,
-    GptMarkdownConfig config,
-    String no,
-    Widget child,
-  ) {
-    final style = (resolvedStyleSheet(context, config).list ??
-            const ListStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final marker = style.markerTextStyle;
-    final base = (config.style ?? const TextStyle()).copyWith(
-      fontWeight: FontWeight.w100,
-    );
-    return OrderedListView(
-      no: "$no.",
-      textDirection: config.textDirection,
-      style: marker == null ? base : base.merge(marker),
-      // 6 is what `OrderedListView` used before this was configurable; the
-      // bullet list uses different numbers, so neither is a shared default.
-      padding: style.indent ?? 6,
-      spacing: style.gapAfterMarker ?? 6,
-      child: child,
-    );
+    return orderedListItem(context, config, no, child);
   }
 }
 
+/// Builds the span for one run of inline `` `code` ``.
+///
+/// Shared by [HighlightedText] and the plusparse renderer so the two parsers
+/// cannot drift apart on the thing a reader sees most often.
+InlineSpan inlineCodeSpan(
+  BuildContext context,
+  String code,
+  GptMarkdownConfig config,
+) {
+  // A plain TextSpan, tagged so the paragraph paints a rounded chip behind
+  // it — see `custom_widgets/inline_code.dart`. Keeping it out of a
+  // WidgetSpan is what lets inline code wrap across lines, stay selectable,
+  // sit on the surrounding baseline, and appear inside a link label.
+  // Three sources, narrowest first: the widget's own `inlineCodeStyle`, then
+  // the style sheet (widget sheet over theme sheet, already merged by
+  // `resolvedStyleSheet`), then the theme's standalone `inlineCode`. The sheet
+  // used to be skipped entirely, so `GptMarkdownStyleSheet(inlineCode: ...)`
+  // merged, lerped and compared like every other style and then changed
+  // nothing on screen.
+  // Whole objects, narrowest first — not a field-by-field merge. Merging would
+  // pull the theme's `fontFamilyPackage` in behind a caller's own
+  // `fontFamily`, and the package prefix would then be applied to a family
+  // that does not ship here. Unset fields are filled by `resolve` below.
+  final codeStyle = (config.inlineCodeStyle ??
+          resolvedStyleSheet(context, config).inlineCode ??
+          GptMarkdownTheme.of(context).inlineCode)
+      .resolve(Theme.of(context).colorScheme);
+  final textStyle = codeStyle.applyTo(config.style ?? const TextStyle());
+
+  final builder = config.inlineCodeBuilder;
+  if (builder != null) {
+    return builder(context, code, textStyle, codeStyle);
+  }
+
+  final legacyBuilder = config.highlightBuilder;
+  if (legacyBuilder != null) {
+    // Kept so 1.1.x code compiles. Wrapped on the baseline rather than at
+    // the old hardcoded `PlaceholderAlignment.middle`, which sat visibly off
+    // the surrounding text.
+    return baselineWidgetSpan(
+      legacyBuilder(context, code, config.style ?? textStyle),
+    );
+  }
+
+  return CodeTextSpan(text: code, codeStyle: codeStyle, style: textStyle);
+}
+
+/// Inline code component of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses inline code itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class HighlightedText extends InlineMd {
   @override
   RegExp get exp => RegExp(r"`(?!`)(.+?)(?<!`)`(?!`)");
@@ -726,42 +836,18 @@ class HighlightedText extends InlineMd {
     final GptMarkdownConfig config,
   ) {
     var match = exp.firstMatch(text.trim());
-    var highlightedText = match?[1] ?? "";
-
-    // A plain TextSpan, tagged so the paragraph paints a rounded chip behind
-    // it — see `custom_widgets/inline_code.dart`. Keeping it out of a
-    // WidgetSpan is what lets inline code wrap across lines, stay selectable,
-    // sit on the surrounding baseline, and appear inside a link label.
-    final codeStyle = (config.inlineCodeStyle ??
-            GptMarkdownTheme.of(context).inlineCode)
-        .resolve(Theme.of(context).colorScheme);
-    final textStyle = codeStyle.applyTo(config.style ?? const TextStyle());
-
-    final builder = config.inlineCodeBuilder;
-    if (builder != null) {
-      return builder(context, highlightedText, textStyle, codeStyle);
-    }
-
-    // ignore: deprecated_member_use_from_same_package
-    final legacyBuilder = config.highlightBuilder;
-    if (legacyBuilder != null) {
-      // Kept so 1.1.x code compiles. Wrapped on the baseline rather than at
-      // the old hardcoded `PlaceholderAlignment.middle`, which sat visibly off
-      // the surrounding text.
-      return baselineWidgetSpan(
-        legacyBuilder(context, highlightedText, config.style ?? textStyle),
-      );
-    }
-
-    return CodeTextSpan(
-      text: highlightedText,
-      codeStyle: codeStyle,
-      style: textStyle,
-    );
+    return inlineCodeSpan(context, match?[1] ?? "", config);
   }
 }
 
 /// Bold text component
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses bold text itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class BoldMd extends InlineMd {
   @override
   RegExp get exp =>
@@ -791,6 +877,14 @@ class BoldMd extends InlineMd {
   }
 }
 
+/// Strikethrough text component of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses strikethrough itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class StrikeMd extends InlineMd {
   @override
   RegExp get exp => RegExp(r"(?<!\*)\~\~(?<!\s)(.+?)(?<!\s)\~\~(?!\*)");
@@ -823,6 +917,13 @@ class StrikeMd extends InlineMd {
 }
 
 /// Italic text component
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses italic text itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class ItalicMd extends InlineMd {
   @override
   RegExp get exp =>
@@ -848,10 +949,17 @@ class ItalicMd extends InlineMd {
   }
 }
 
+/// Block LaTeX component of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's component lists; the modern
+/// pipeline parses display maths itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class LatexMathMultiLine extends BlockMd {
   @override
   String get expString => (r"\ *\\\[((?:.)*?)\\\]");
-  // (r"\ *\\\[((?:(?!\n\n\n).)*?)\\\]|(\\begin.*?\\end{.*?})");
   @override
   RegExp get exp => RegExp(expString, dotAll: true, multiLine: true);
 
@@ -862,93 +970,23 @@ class LatexMathMultiLine extends BlockMd {
     final GptMarkdownConfig config,
   ) {
     var p0 = exp.firstMatch(text.trim());
-    String mathText = p0?[1] ?? p0?[2] ?? '';
-    var workaround = config.latexWorkaround ?? (String tex) => tex;
-
-    var builder =
-        config.latexBuilder ??
-        (BuildContext context, String tex, TextStyle textStyle, bool inline) =>
-            SelectableAdapter(
-              selectedText: tex,
-              child: Math.tex(
-                tex,
-                textStyle: textStyle,
-                mathStyle: MathStyle.display,
-                textScaleFactor: 1,
-                settings: const TexParserSettings(strict: Strict.ignore),
-                options: MathOptions(
-                  sizeUnderTextStyle: MathSize.large,
-                  color:
-                      config.style?.color ??
-                      Theme.of(context).colorScheme.onSurface,
-                  fontSize:
-                      config.style?.fontSize ??
-                      Theme.of(context).textTheme.bodyMedium?.fontSize,
-                  mathFontOptions: FontOptions(
-                    fontFamily: "Main",
-                    fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                    fontShape: FontStyle.normal,
-                  ),
-                  textFontOptions: FontOptions(
-                    fontFamily: "Main",
-                    fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                    fontShape: FontStyle.normal,
-                  ),
-                  style: MathStyle.display,
-                ),
-                onErrorFallback: (err) {
-                  return Text(
-                    workaround(mathText),
-                    textDirection: config.textDirection,
-                    style: textStyle.copyWith(
-                      color:
-                          (!kDebugMode)
-                              ? null
-                              : Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                },
-              ),
-            );
-    final latexStyle = (resolvedStyleSheet(context, config).latex ??
-            const LatexStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final override = latexStyle.textStyle;
-    final base = config.style ?? const TextStyle();
-    Widget maths = builder(
+    return latexWidget(
       context,
-      workaround(mathText),
-      override == null ? base : base.merge(override),
-      false,
+      config,
+      tex: p0?[1] ?? p0?[2] ?? '',
+      inline: false,
     );
-
-    if (latexStyle.scrollBlockHorizontally ?? false) {
-      // Rendered maths cannot wrap, so a wide formula overflows a phone.
-      maths = SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: maths,
-      );
-    }
-    final background = latexStyle.backgroundColor;
-    if (background != null) {
-      final radius = latexStyle.borderRadius;
-      maths = DecoratedBox(
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: radius == null ? null : BorderRadius.all(radius),
-        ),
-        child: maths,
-      );
-    }
-    final padding = latexStyle.padding;
-    if (padding != null) {
-      maths = Padding(padding: padding, child: maths);
-    }
-    return maths;
   }
 }
 
-/// Italic text component
+/// Inline LaTeX component of the legacy regex pipeline.
+///
+/// A built-in of that pipeline's `inlineComponents` list; the modern pipeline
+/// parses inline maths itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class LatexMath extends InlineMd {
   @override
   RegExp get exp => RegExp(
@@ -968,70 +1006,21 @@ class LatexMath extends InlineMd {
     var p0 = exp.firstMatch(text.trim());
     p0?.group(0);
     String mathText = p0?[1]?.toString() ?? "";
-    var workaround = config.latexWorkaround ?? (String tex) => tex;
-    var builder =
-        config.latexBuilder ??
-        (BuildContext context, String tex, TextStyle textStyle, bool inline) =>
-            SelectableAdapter(
-              selectedText: tex,
-              child: Math.tex(
-                tex,
-                textStyle: textStyle,
-                mathStyle: MathStyle.display,
-                textScaleFactor: 1,
-                settings: const TexParserSettings(strict: Strict.ignore),
-                options: MathOptions(
-                  sizeUnderTextStyle: MathSize.large,
-                  color:
-                      config.style?.color ??
-                      Theme.of(context).colorScheme.onSurface,
-                  fontSize:
-                      config.style?.fontSize ??
-                      Theme.of(context).textTheme.bodyMedium?.fontSize,
-                  mathFontOptions: FontOptions(
-                    fontFamily: "Main",
-                    fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                    fontShape: FontStyle.normal,
-                  ),
-                  textFontOptions: FontOptions(
-                    fontFamily: "Main",
-                    fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                    fontShape: FontStyle.normal,
-                  ),
-                  style: MathStyle.display,
-                ),
-                onErrorFallback: (err) {
-                  return Text(
-                    workaround(mathText),
-                    textDirection: config.textDirection,
-                    style: textStyle.copyWith(
-                      color:
-                          (!kDebugMode)
-                              ? null
-                              : Theme.of(context).colorScheme.error,
-                    ),
-                  );
-                },
-              ),
-            );
-    final latexStyle = (resolvedStyleSheet(context, config).latex ??
-            const LatexStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final latexOverride = latexStyle.textStyle;
-    final base = config.style ?? const TextStyle();
     return scaledWidgetSpan(
       config: config,
-      child: builder(
-        context,
-        workaround(mathText),
-        latexOverride == null ? base : base.merge(latexOverride),
-        true,
-      ),
+      child: latexWidget(context, config, tex: mathText, inline: true),
     );
   }
 }
 
 /// source text component
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses `[1]` citation chips itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class SourceTag extends InlineMd {
   @override
   RegExp get exp => RegExp(r"(?:【.*?)?\[(\d+?)\]");
@@ -1047,56 +1036,18 @@ class SourceTag extends InlineMd {
     if (content == null) {
       return const TextSpan();
     }
-    final style = (resolvedStyleSheet(context, config).sourceTag ??
-            const SourceTagStyle())
-        .resolve(Theme.of(context).colorScheme);
-    final size = style.size ?? 20;
-    Widget chip =
-        config.sourceTagBuilder?.call(
-          context,
-          content,
-          style.textStyle ?? const TextStyle(),
-        ) ??
-        SizedBox(
-          width: size,
-          height: size,
-          child: Material(
-            color:
-                style.backgroundColor ??
-                Theme.of(context).colorScheme.onInverseSurface,
-            shape:
-                style.shape == BoxShape.rectangle
-                    ? const RoundedRectangleBorder()
-                    : const OvalBorder(),
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                content,
-                style: style.textStyle,
-                textDirection: config.textDirection,
-              ),
-            ),
-          ),
-        );
-
-    final onTap = config.onSourceTagTap;
-    if (onTap != null) {
-      chip = GestureDetector(onTap: () => onTap(content), child: chip);
-    }
-
-    return scaledWidgetSpan(
-      config: config,
-      alignment: PlaceholderAlignment.middle,
-      baseline: null,
-      child: Padding(
-        padding: style.padding ?? const EdgeInsets.all(2),
-        child: chip,
-      ),
-    );
+    return sourceTagSpan(context, content, config);
   }
 }
 
 /// Link text component
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses links itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class ATagMd extends InlineMd {
   @override
   RegExp get exp => RegExp(r"(?<!\!)\[.*?\]\([^\s]*\)");
@@ -1213,7 +1164,11 @@ WidgetSpan scaledWidgetSpan({
   PlaceholderAlignment alignment = PlaceholderAlignment.baseline,
   TextBaseline? baseline = TextBaseline.alphabetic,
 }) {
-  return WidgetSpan(alignment: alignment, baseline: baseline, child: child);
+  return WidgetSpan(
+    alignment: alignment,
+    baseline: baseline,
+    child: MarkdownTextScaling.wrap(child, enabled: false),
+  );
 }
 
 /// Builds the span for a link, shared by [ATagMd] and [AutolinkMd].
@@ -1229,44 +1184,93 @@ InlineSpan buildLinkSpan(
   required String url,
   required String label,
   bool parseLabel = true,
+  List<InlineSpan> Function(GptMarkdownConfig conf)? buildLabelSpans,
 }) {
   final theme = GptMarkdownTheme.of(context);
+  // `LinkStyle.resolve` cannot reach these — it is handed a `ColorScheme` and
+  // the defaults live on `GptMarkdownTheme`. Resolve here so a builder is
+  // handed a `LinkStyle` whose fields are genuinely filled in.
   final linkStyleSpec = (resolvedStyleSheet(context, config).link ??
           const LinkStyle())
       .resolve(Theme.of(context).colorScheme);
   final baseColor = linkStyleSpec.color ?? theme.linkColor;
   final hoverColor = linkStyleSpec.hoverColor ?? theme.linkHoverColor;
   final decoration = linkStyleSpec.decoration ?? TextDecoration.underline;
-  final builder = config.linkBuilder;
+  final resolvedLinkStyle = linkStyleSpec.copyWith(
+    color: baseColor,
+    hoverColor: hoverColor,
+    decoration: decoration,
+  );
 
   List<InlineSpan> labelSpans(TextStyle style) {
+    final conf = config.copyWith(style: style, scope: MarkdownScope.linkLabel);
+    // The plusparse renderer already holds the label's parsed children, so it
+    // supplies them rather than having the text re-parsed.
+    final custom = buildLabelSpans;
+    if (custom != null) {
+      return custom(conf);
+    }
     if (!parseLabel) {
       return [TextSpan(text: label, style: style)];
     }
-    return MarkdownComponent.generate(
-      context,
-      label,
-      config.copyWith(style: style, scope: MarkdownScope.linkLabel),
-      false,
-    );
+    return MarkdownComponent.generate(context, label, conf, false);
   }
 
+  final linkTextStyle = (config.style ?? const TextStyle()).copyWith(
+    color: baseColor,
+    decorationColor: baseColor,
+    decoration: decoration,
+    decorationThickness: resolvedLinkStyle.decorationThickness,
+    fontWeight: resolvedLinkStyle.fontWeight,
+  );
+
+  final onLinkTap = config.onLinkTap;
+  final onTap = onLinkTap == null ? null : () => onLinkTap(url, label);
+
+  final builder = config.inlineLinkBuilder;
   if (builder != null) {
-    // Build a styled span to hand off to the custom linkBuilder.
-    final linkStyle = (config.style ?? const TextStyle()).copyWith(
-      color: baseColor,
-      decorationColor: baseColor,
-      decoration: decoration,
-      decorationThickness: linkStyleSpec.decorationThickness,
-      fontWeight: linkStyleSpec.fontWeight,
+    final details = LinkBuildDetails(
+      context: context,
+      config: config,
+      style: linkTextStyle,
+      url: url,
+      label: label,
+      labelSpans: labelSpans(linkTextStyle),
+      linkStyle: resolvedLinkStyle,
+      isAutolink: !parseLabel,
+      onTap: onTap,
     );
+    final span = builder(details);
+    assert(
+      onTap == null ||
+          // `[](url)` has no label, so there is genuinely nothing to tap and
+          // nothing wrong. Without this the package's own recommended
+          // `defaultSpan()` trips its own assert on valid Markdown.
+          span.toPlainText(includePlaceholders: false).isEmpty ||
+          _hasReachableTap(span),
+      'inlineLinkBuilder returned a span with nothing that can be tapped for '
+      '"$url". A GestureRecognizer only fires on a TextSpan that carries text, '
+      'and a plain TextSpan carries no tap at all. Return '
+      'details.defaultSpan(), a TappableTextSpan/LinkTextSpan, or '
+      'details.asWidgetSpan() for a widget.',
+    );
+    return span;
+  }
+
+  final legacyBuilder = config.linkBuilder;
+  if (legacyBuilder != null) {
+    // Kept so 1.2.x code compiles: a Widget still has to go in a placeholder,
+    // and the tap still has to be a GestureDetector around it.
     return scaledWidgetSpan(
       config: config,
       child: GestureDetector(
-        onTap: () => config.onLinkTap?.call(url, label),
-        child: builder(
+        // Always non-null, as it has been since 1.1: a null callback makes
+        // `GestureDetector` transparent, so a link would start passing taps
+        // through to whatever wraps it for anyone who has no `onLinkTap`.
+        onTap: () => onTap?.call(),
+        child: legacyBuilder(
           context,
-          TextSpan(children: labelSpans(linkStyle), style: linkStyle),
+          TextSpan(children: labelSpans(linkTextStyle), style: linkTextStyle),
           url,
           config.style ?? const TextStyle(),
         ),
@@ -1274,31 +1278,71 @@ InlineSpan buildLinkSpan(
     );
   }
 
-  // Default rendering — LinkButton rebuilds the span on every hover change so
-  // bold/italic text inside a link also picks up the hover colour.
-  return scaledWidgetSpan(
-    config: config,
-    child: LinkButton(
-      hoverColor: hoverColor,
-      color: baseColor,
-      onPressed: () => config.onLinkTap?.call(url, label),
-      text: label,
-      config: config,
-      spanBuilder: (color) {
-        final spanStyle = (config.style ?? const TextStyle()).copyWith(
-          color: color,
-          decorationColor: color,
-          decoration: decoration,
-          decorationThickness: linkStyleSpec.decorationThickness,
-          fontWeight: linkStyleSpec.fontWeight,
-        );
-        return TextSpan(children: labelSpans(spanStyle), style: spanStyle);
-      },
-    ),
+  // Default rendering — a span, not a widget.
+  //
+  // A `WidgetSpan` link sits off the text baseline, cannot wrap across lines
+  // (the whole label jumps to the next one), is skipped by text selection, and
+  // is one opaque character to the streaming reveal. As a span the label is
+  // real text: it wraps mid-label, selects with the sentence around it, and
+  // reveals character by character.
+  //
+  // The tap cannot ride on this span's own recognizer — a recognizer only
+  // fires on a span that carries its own `text`, and this one carries
+  // `children`. `LinkTextSpan` is resolved by text range instead; see
+  // `InlineTapTargets`.
+  //
+  // Hover is likewise resolved once per paragraph rather than by a
+  // `StatefulWidget` per link, which is what `LinkButton` used to do.
+  return LinkTextSpan.wrapping(
+    children: labelSpans(linkTextStyle),
+    url: url,
+    linkStyle: resolvedLinkStyle,
+    style: linkTextStyle,
+    hoverStyle: TextStyle(color: hoverColor, decorationColor: hoverColor),
+    onTap: onTap,
   );
 }
 
+/// Whether a tap can reach anything in [root].
+///
+/// True when the tree holds a [TappableTextSpan] with a measurable range, a
+/// [TextSpan] leaf carrying its own recognizer, or any placeholder — a
+/// placeholder owns its own gestures, so the package cannot tell whether it is
+/// tappable and does not guess. Debug only.
+bool _hasReachableTap(InlineSpan root) {
+  if (collectInlineTapRuns(root).isNotEmpty) {
+    return true;
+  }
+  var reachable = false;
+  void visit(InlineSpan span) {
+    if (reachable) {
+      return;
+    }
+    if (span is! TextSpan) {
+      reachable = true;
+      return;
+    }
+    if (span.recognizer != null && (span.text?.isNotEmpty ?? false)) {
+      reachable = true;
+      return;
+    }
+    for (final child in span.children ?? const <InlineSpan>[]) {
+      visit(child);
+    }
+  }
+
+  visit(root);
+  return reachable;
+}
+
 /// Image component
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses images itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class ImageMd extends InlineMd {
   @override
   RegExp get exp => RegExp(r"\!\[[^\[\]]*\]\([^\s]*\)");
@@ -1358,70 +1402,18 @@ class ImageMd extends InlineMd {
       height = double.tryParse(size?[2]?.toString().trim() ?? 'a');
     }
 
-    final Widget image;
-    if (config.imageBuilder != null) {
-      image = config.imageBuilder!(context, url, width, height);
-    } else {
-      image = SizedBox(
-        width: width,
-        height: height,
-        child: Image(
-          image: NetworkImage(url),
-          loadingBuilder: (
-            BuildContext context,
-            Widget child,
-            ImageChunkEvent? loadingProgress,
-          ) {
-            if (loadingProgress == null) {
-              return child;
-            }
-            return CustomImageLoading(
-              progress:
-                  loadingProgress.expectedTotalBytes != null
-                      ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                      : 1,
-            );
-          },
-          fit: BoxFit.fill,
-          errorBuilder: (context, error, stackTrace) {
-            return const CustomImageError();
-          },
-        ),
-      );
-    }
-    final imageStyle = (resolvedStyleSheet(context, config).image ??
-            const ImageStyle())
-        .resolve(Theme.of(context).colorScheme);
-    Widget decorated = image;
-    final imageRadius = imageStyle.borderRadius;
-    if (imageRadius != null) {
-      decorated = ClipRRect(
-        borderRadius: BorderRadius.all(imageRadius),
-        child: decorated,
-      );
-    }
-    final imagePadding = imageStyle.padding;
-    if (imagePadding != null) {
-      decorated = Padding(padding: imagePadding, child: decorated);
-    }
-    final onImageTap = config.onImageTap;
-    if (onImageTap != null) {
-      decorated = GestureDetector(
-        onTap: () => onImageTap(url),
-        child: decorated,
-      );
-    }
-    return scaledWidgetSpan(
-      config: config,
-      alignment: PlaceholderAlignment.bottom,
-      baseline: null,
-      child: decorated,
-    );
+    return imageSpan(context, config, url: url, width: width, height: height);
   }
 }
 
 /// Table component
+///
+/// A built-in of the legacy regex pipeline's component lists; the modern
+/// pipeline parses tables itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class TableMd extends BlockMd {
   /// A table cannot be a link label.
   @override
@@ -1527,106 +1519,130 @@ class TableMd extends BlockMd {
       );
     }
 
-    final controller = ScrollController();
-    return Scrollbar(
-      controller: controller,
-      child: SingleChildScrollView(
-        controller: controller,
-        scrollDirection: Axis.horizontal,
-        child: Table(
-          textDirection: config.textDirection,
-          defaultColumnWidth: CustomTableColumnWidth(),
-          defaultVerticalAlignment: TableCellVerticalAlignment.middle,
-          border: TableBorder.all(
-            width: tableStyle.borderWidth ?? 1,
-            color:
-                tableStyle.borderColor ??
-                Theme.of(context).colorScheme.onSurface,
-            borderRadius:
-                tableRadius == null
-                    ? BorderRadius.zero
-                    : BorderRadius.all(tableRadius),
-          ),
-          children:
-              value
-                  .asMap()
-                  .entries
-                  .where((entry) {
-                    // Skip the separator row (second row) from rendering
-                    if (hasHeader && entry.key == 1) {
-                      return false;
-                    }
-                    return true;
-                  })
-                  .map<TableRow>(
-                    (entry) => TableRow(
-                      decoration:
-                          (hasHeader && entry.key == 0)
-                              ? BoxDecoration(
-                                color:
-                                    tableStyle.headerBackground ??
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
-                              )
-                              : null,
-                      children: List.generate(maxCol, (index) {
-                        var e = entry.value;
-                        String data = e[index] ?? "";
-                        if (RegExp(r"^:?--+:?$").hasMatch(data.trim()) ||
-                            data.trim().isEmpty) {
-                          return const SizedBox();
-                        }
-
-                        // Apply alignment based on column alignment
-                        Widget content = Padding(
-                          padding:
-                              tableStyle.cellPadding ??
-                              const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 4,
-                              ),
-                          child: MdWidget(
-                            context,
-                            (e[index] ?? "").trim(),
-                            false,
-                            config: config.copyWith(
-                              scope: MarkdownScope.tableCell,
-                            ),
-                          ),
-                        );
-
-                        // Wrap with alignment widget
-                        switch (columnAlignments[index]) {
-                          case TextAlign.center:
-                            content = Center(child: content);
-                            break;
-                          case TextAlign.right:
-                            content = Align(
-                              alignment: Alignment.centerRight,
-                              child: content,
-                            );
-                            break;
-                          case TextAlign.left:
-                          default:
-                            content = Align(
-                              alignment: Alignment.centerLeft,
-                              child: content,
-                            );
-                            break;
-                        }
-
-                        return content;
-                      }),
-                    ),
-                  )
-                  .toList(),
+    return _TableViewport(
+      child: Table(
+        textDirection: config.textDirection,
+        defaultColumnWidth:
+            tableStyle.columnWidth ?? const CustomTableColumnWidth(),
+        defaultVerticalAlignment: TableCellVerticalAlignment.middle,
+        border: TableBorder.all(
+          width: tableStyle.borderWidth ?? 1,
+          color:
+              tableStyle.borderColor ?? Theme.of(context).colorScheme.onSurface,
+          borderRadius:
+              tableRadius == null
+                  ? BorderRadius.zero
+                  : BorderRadius.all(tableRadius),
         ),
+        children:
+            value
+                .asMap()
+                .entries
+                .where((entry) {
+                  // Skip the separator row (second row) from rendering
+                  if (hasHeader && entry.key == 1) {
+                    return false;
+                  }
+                  return true;
+                })
+                .map<TableRow>((entry) {
+                  final isHeader = hasHeader && entry.key == 0;
+                  // Stripes count data rows, so the header never takes one
+                  // and the first row under it is always unstriped. The
+                  // separator row is already filtered out above, so the key
+                  // is the source row index: data rows start at 2 with a
+                  // header and at 0 without.
+                  final stripe = tableStyle.rowStripeColor;
+                  final dataIndex = hasHeader ? entry.key - 2 : entry.key;
+                  return TableRow(
+                    decoration:
+                        isHeader
+                            ? BoxDecoration(
+                              color:
+                                  tableStyle.headerBackground ??
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.surfaceContainerHighest,
+                            )
+                            : (stripe != null && dataIndex.isOdd)
+                            ? BoxDecoration(color: stripe)
+                            : null,
+                    children: List.generate(maxCol, (index) {
+                      var e = entry.value;
+                      String data = e[index] ?? "";
+                      if (RegExp(r"^:?--+:?$").hasMatch(data.trim()) ||
+                          data.trim().isEmpty) {
+                        return const SizedBox();
+                      }
+
+                      // Apply alignment based on column alignment
+                      Widget content = Padding(
+                        padding:
+                            tableStyle.cellPadding ??
+                            const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                        child: MdWidget(
+                          context,
+                          (e[index] ?? "").trim(),
+                          false,
+                          config: config.copyWith(
+                            scope: MarkdownScope.tableCell,
+                          ),
+                        ),
+                      );
+                      // Merged into the ambient style rather than replacing
+                      // it, so setting only `fontWeight` keeps the document's
+                      // family, size and colour.
+                      final headerStyle = tableStyle.headerTextStyle;
+                      if (isHeader && headerStyle != null) {
+                        content = DefaultTextStyle.merge(
+                          style: headerStyle,
+                          child: content,
+                        );
+                      }
+
+                      // Only a column that pulls its content off the leading
+                      // edge needs an alignment box. A left-aligned cell is
+                      // already flush left: the table hands it a tight width
+                      // and the text starts at the leading edge on its own.
+                      // The box is not free — content-sized columns lay every
+                      // cell out twice, once to measure and once for real, so
+                      // a redundant wrapper is two extra layouts per cell.
+                      switch (columnAlignments[index]) {
+                        case TextAlign.center:
+                          content = Center(child: content);
+                          break;
+                        case TextAlign.right:
+                          content = Align(
+                            alignment: Alignment.centerRight,
+                            child: content,
+                          );
+                          break;
+                        case TextAlign.left:
+                        default:
+                          break;
+                      }
+
+                      return content;
+                    }),
+                  );
+                })
+                .toList(),
       ),
     );
   }
 }
 
+/// Fenced code block component of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's `components` list; the modern
+/// pipeline parses fenced code itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class CodeBlockMd extends BlockMd {
   @override
   String get expString => r"```(.*?)\n((.*?)(:?\n\s*?```)|(.*)(:?\n```)?)$";
@@ -1639,21 +1655,24 @@ class CodeBlockMd extends BlockMd {
     String codes = this.exp.firstMatch(text)?[2] ?? "";
     String name = this.exp.firstMatch(text)?[1] ?? "";
     codes = codes.replaceAll(r"```", "");
-    bool closed = text.endsWith("```");
-
-    final style = (resolvedStyleSheet(context, config).codeBlock ??
-            const CodeBlockStyle())
-        .resolve(Theme.of(context).colorScheme);
-    return config.codeBuilder?.call(context, name, codes, closed) ??
-        CodeField(
-          name: name,
-          codes: codes,
-          style: style,
-          onCopy: config.onCodeCopy,
-        );
+    return codeBlockWidget(
+      context,
+      config,
+      name: name,
+      code: codes,
+      closed: text.endsWith("```"),
+    );
   }
 }
 
+/// `<u>` underline component of the legacy regex pipeline.
+///
+/// A built-in of the legacy regex pipeline's `inlineComponents` list; the
+/// modern pipeline parses `<u>` spans itself.
+@Deprecated(
+  'Built-in of the legacy regex pipeline; there is no replacement. '
+  'Will be removed in 2.0.0.',
+)
 class UnderLineMd extends InlineMd {
   @override
   RegExp get exp =>

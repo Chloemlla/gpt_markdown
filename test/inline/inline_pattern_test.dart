@@ -37,7 +37,9 @@ InlinePattern chipPattern(RegExp pattern, {Set<MarkdownScope>? scopes}) {
 /// Concatenates the text of every [RichText] on screen.
 String allRichText(WidgetTester tester) {
   final buffer = StringBuffer();
-  for (final rt in tester.widgetList<RichText>(find.byType(RichText))) {
+  for (final rt in tester.widgetList<RichText>(
+    find.byWidgetPredicate((w) => w is RichText),
+  )) {
     buffer.write(rt.text.toPlainText(includePlaceholders: false));
   }
   return buffer.toString();
@@ -51,6 +53,52 @@ void main() {
       ]);
       expect(find.text('CHIP:#general'), findsOneWidget);
     });
+
+    // The precedence guarantee holds on both pipelines. The regex pipeline
+    // gets it by dispatching patterns and components through one combined
+    // match; the incremental pipeline cannot, because by the time it has a
+    // tree `**bold**` is already emphasis — so a match is lifted out before
+    // parsing and put back at render.
+    for (final incremental in [false, true]) {
+      final pipeline = incremental ? 'incremental' : 'regex';
+      testWidgets('$pipeline: a pattern beats the built-in reading', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GptMarkdown(
+                'a **bold** b',
+                incremental: incremental,
+                inlinePatterns: [chipPattern(RegExp(r'\*\*bold\*\*'))],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        while (tester.takeException() != null) {}
+        expect(find.text('CHIP:**bold**'), findsOneWidget);
+      });
+
+      testWidgets('$pipeline: a pattern does not reach inside a fence', (
+        tester,
+      ) async {
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: GptMarkdown(
+                '```\n#general\n```',
+                incremental: incremental,
+                inlinePatterns: [chipPattern(RegExp(r'#general'))],
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+        while (tester.takeException() != null) {}
+        expect(find.text('CHIP:#general'), findsNothing);
+      });
+    }
 
     testWidgets('wins over the built-in components', (tester) async {
       // `**bold**` would normally be claimed by BoldMd.
@@ -107,7 +155,9 @@ void main() {
         ),
       ]);
       // One paragraph, no placeholder — text and mention in the same RichText.
-      final rt = tester.widget<RichText>(find.byType(RichText).first);
+      final rt = tester.widget<RichText>(
+        find.byWidgetPredicate((w) => w is RichText).first,
+      );
       expect(rt.text.toPlainText(), 'ping @ada please');
     });
   });
