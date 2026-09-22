@@ -1,4 +1,4 @@
-part of '../gpt_markdown.dart';
+part of '../gpt_markdown_chloemlla.dart';
 
 /// Viewport-lazy Markdown for long documents, placed in CustomScrollView.slivers.
 ///

@@ -1,4 +1,4 @@
-part of '../gpt_markdown.dart';
+part of '../gpt_markdown_chloemlla.dart';
 
 /// The vertical space between two top-level blocks.
 ///

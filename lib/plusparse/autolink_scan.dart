@@ -1,4 +1,4 @@
-part of '../gpt_markdown.dart';
+part of '../gpt_markdown_chloemlla.dart';
 
 /// Autolinks one run of plain text, without running a regex over it.
 ///

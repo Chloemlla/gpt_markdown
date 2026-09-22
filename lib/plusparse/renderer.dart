@@ -1,4 +1,4 @@
-part of '../gpt_markdown.dart';
+part of '../gpt_markdown_chloemlla.dart';
 
 /// Renders a plusparse [MdDocument] AST into the same `InlineSpan` tree the
 /// regex pipeline (`MarkdownComponent.generate`) produces — same custom

@@ -1,4 +1,4 @@
-part of 'gpt_markdown.dart';
+part of 'gpt_markdown_chloemlla.dart';
 
 /// Builds one custom block. Blocks are atomic during character reveal; use
 /// blockAnimation for an entrance. The renderer receives the parsed payload,
