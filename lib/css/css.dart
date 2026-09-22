@@ -1,5 +1,5 @@
 /// CSS parsing support for gpt_markdown_chloemlla
-library gpt_markdown_chloemlla_css;
+library;
 
 export 'css_parser.dart';
 export 'css_stylesheet.dart';

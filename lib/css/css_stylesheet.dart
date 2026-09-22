@@ -1,6 +1,5 @@
 import 'package:csslib/parser.dart' as css;
 import 'package:csslib/visitor.dart' as css;
-import 'package:flutter/material.dart';
 
 /// CSS Stylesheet manager that parses and stores CSS rules
 class CssStylesheet {
@@ -46,13 +45,10 @@ class CssStylesheet {
   }
 
   String _getPropertyName(css.Declaration declaration) {
-    final span = declaration.span;
-    if (span != null) {
-      final text = span.text;
-      final colonIndex = text.indexOf(':');
-      if (colonIndex > 0) {
-        return text.substring(0, colonIndex).trim();
-      }
+    final text = declaration.span.text;
+    final colonIndex = text.indexOf(':');
+    if (colonIndex > 0) {
+      return text.substring(0, colonIndex).trim();
     }
     return declaration.property.toString();
   }

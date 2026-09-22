@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:csslib/parser.dart' as css;
-import 'package:csslib/visitor.dart' as css;
 
 /// CSS Parser for parsing inline styles and style attributes
 class CssParser {

@@ -1,5 +1,5 @@
 /// Powerful Flutter Markdown & LaTeX Renderer
-library gpt_markdown_chloemlla;
+library;
 
 import 'custom_widgets/markdown_text_scaling.dart';
 export 'custom_widgets/markdown_text_scaling.dart';

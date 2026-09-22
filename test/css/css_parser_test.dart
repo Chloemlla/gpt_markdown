@@ -19,7 +19,7 @@ void main() {
         final style = CssParser.parseInlineStyle(
           'color: rgba(255, 0, 0, 0.5);',
         );
-        expect(style?.color?.value, 0x80FF0000);
+        expect(style?.color?.toARGB32(), 0x80FF0000);
       });
 
       test('parses named color', () {
@@ -130,7 +130,7 @@ void main() {
         final style = CssParser.parseInlineStyle(
           'color: rgba(255, 0, 0, 0.75);',
         );
-        expect(style?.color?.value, 0xBFFF0000);
+        expect(style?.color?.toARGB32(), 0xBFFF0000);
       });
 
       test('parses common named colors', () {

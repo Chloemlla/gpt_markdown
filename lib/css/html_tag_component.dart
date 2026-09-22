@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gpt_markdown_chloemlla/custom_widgets/markdown_config.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 import 'css_parser.dart';
 
