@@ -69,6 +69,25 @@ Overriding one value never discards the rest.
 
 ---
 
+## Spacing between blocks
+
+`blockSpacing` sets the vertical gap between blocks — paragraphs, headings,
+lists, code, tables, quotes — in logical pixels:
+
+```dart
+styleSheet: const GptMarkdownStyleSheet(blockSpacing: 8),
+```
+
+Unset, the gap is one empty line: 1.15 × the font size, 16 pixels at the
+default 14. It grows with the text scale either way, so a reader who enlarges
+text keeps the same proportions. Extra blank lines in the source never widen
+it — two, three or ten in a row give one gap — and `0` removes it.
+
+A block's own margin or padding is added on top, so a quote with
+`BlockQuoteStyle(margin: ...)` sits that much further away.
+
+---
+
 ## HeadingStyle
 
 `textStyle` · `padding` · `showDivider` · `dividerColor` · `dividerThickness` ·

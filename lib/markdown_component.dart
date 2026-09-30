@@ -684,14 +684,7 @@ class NewLines extends InlineMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    return TextSpan(
-      text: "\n\n",
-      style: TextStyle(
-        fontSize: config.style?.fontSize ?? 14,
-        height: 1.15,
-        color: config.style?.color,
-      ),
-    );
+    return paragraphBreakSpan(context, config);
   }
 }
 

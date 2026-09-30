@@ -605,7 +605,11 @@ class GptMarkdown extends StatelessWidget {
       // whole-document build creates it on its own.
       seamGap: blockGap(
         context,
-        GptMarkdownConfig(style: style, textScaler: textScaler),
+        GptMarkdownConfig(
+          style: style,
+          textScaler: textScaler,
+          styleSheet: styleSheet,
+        ),
       ),
       builder: _buildDocument,
     );

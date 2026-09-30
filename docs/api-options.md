@@ -84,6 +84,8 @@ The incremental segment cache applies with `animation: none` as well;
 
 Use `GptMarkdownThemeData` for app-wide defaults and `styleSheet` for one
 widget. Widget fields win over theme fields one property at a time.
+`styleSheet.blockSpacing` sets the gap between blocks; see
+[spacing between blocks](customization.md#spacing-between-blocks).
 `followLinkColor` is plumbed as far as the render config and then read by
 nothing, so a link label paints the same whichever value you pass; set
 `LinkStyle` on the style sheet instead. See

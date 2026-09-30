@@ -159,6 +159,45 @@ Widget headingWidget(
   return Padding(padding: headingPadding, child: rich);
 }
 
+/// The break between two blocks in a text-rendered document: one empty line.
+///
+/// With [GptMarkdownStyleSheet.blockSpacing] unset this is the historical
+/// span, unchanged. Set, the empty line is exactly that tall. The first
+/// newline ends the line before it and so takes that line's own style —
+/// styled with the spacing, a large value would stretch the previous line as
+/// well as add the gap.
+InlineSpan paragraphBreakSpan(BuildContext context, GptMarkdownConfig config) {
+  final fontSize = config.style?.fontSize ?? 14;
+  final spacing = resolvedStyleSheet(context, config).blockSpacing;
+  if (spacing == null) {
+    return TextSpan(
+      text: "\n\n",
+      style: TextStyle(
+        fontSize: fontSize,
+        height: 1.15,
+        color: config.style?.color,
+      ),
+    );
+  }
+  // No gap is no empty line at all: a zero-height one still takes a pixel.
+  if (spacing == 0 || fontSize == 0) {
+    return TextSpan(text: "\n", style: config.style);
+  }
+  return TextSpan(
+    children: [
+      TextSpan(text: "\n", style: config.style),
+      TextSpan(
+        text: "\n",
+        style: TextStyle(
+          fontSize: fontSize,
+          height: spacing / fontSize,
+          color: config.style?.color,
+        ),
+      ),
+    ],
+  );
+}
+
 /// A block quote, honouring [GptMarkdownConfig.blockQuoteBuilder] and
 /// [BlockQuoteStyle].
 ///

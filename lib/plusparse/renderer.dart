@@ -71,16 +71,6 @@ class PlusparseRenderer {
   // Block level
   // ---------------------------------------------------------------------
 
-  /// The paragraph-break span the regex pipeline's `NewLines` component emits.
-  static TextSpan _paragraphBreak(GptMarkdownConfig config) => TextSpan(
-    text: "\n\n",
-    style: TextStyle(
-      fontSize: config.style?.fontSize ?? 14,
-      height: 1.15,
-      color: config.style?.color,
-    ),
-  );
-
   /// Replicates `BlockMd.span`'s wrapping of a block widget.
   static InlineSpan _blockSpan(Widget child) => BlockWidgetSpan(
     child: Row(
@@ -126,7 +116,7 @@ class PlusparseRenderer {
       if (spans.isNotEmpty) {
         spans.add(
           separator == "\n\n"
-              ? _paragraphBreak(config)
+              ? paragraphBreakSpan(context, config)
               : TextSpan(text: separator, style: config.style),
         );
       }

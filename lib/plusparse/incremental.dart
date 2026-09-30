@@ -13,7 +13,15 @@ part of '../gpt_markdown.dart';
 /// agree, or content moves when the seam does.
 double blockGap(BuildContext context, GptMarkdownConfig config) {
   final scaler = config.textScaler ?? MediaQuery.textScalerOf(context);
-  return scaler.scale((config.style?.fontSize ?? 14) * 1.15);
+  final fontSize = config.style?.fontSize ?? 14;
+  final spacing = resolvedStyleSheet(context, config).blockSpacing;
+  if (spacing == null) {
+    return scaler.scale(fontSize * 1.15);
+  }
+  // The same arithmetic as [paragraphBreakSpan]: the text there is scaled
+  // through its font size, so this scales the font size too rather than the
+  // spacing, and the two agree under a non-linear scaler as well.
+  return fontSize == 0 ? 0 : scaler.scale(fontSize) * spacing / fontSize;
 }
 
 /// Incremental (segment-cached) Markdown view, and the streaming reveal.

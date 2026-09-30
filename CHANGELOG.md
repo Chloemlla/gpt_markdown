@@ -4,10 +4,14 @@
 
 * Alerts: a quote whose first line is `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`,
   `[!WARNING]` or `[!CAUTION]` renders with an icon, a title and an accent
-  colour on a faint tint of it (#79). Style it with `GptMarkdownStyleSheet.alert` (`AlertStyle`,
-  with per-type overrides) or replace it with `alertBuilder`. Apps that set
-  `blockQuoteBuilder` and no `alertBuilder` keep their quote look. The parsed
-  `MdBlockQuote` gains an optional `alert`; its `children` are unchanged.
+  colour on a faint tint of it (#79). Style it with
+  `GptMarkdownStyleSheet.alert` (`AlertStyle`, with per-type overrides) or
+  replace it with `alertBuilder`. Apps that set `blockQuoteBuilder` and no
+  `alertBuilder` keep their quote look. The parsed `MdBlockQuote` gains an
+  optional `alert`; its `children` are unchanged.
+* `GptMarkdownStyleSheet.blockSpacing` sets the gap between blocks, in logical
+  pixels (#41). Unset, it is the existing one empty line; it scales with the
+  text either way, and extra blank lines in the source never widen it.
 * `TableStyle.overflow`: `TableOverflow.wrap` fits a wide table to the screen
   and wraps its cells instead of scrolling it sideways (#93). The default,
   `TableOverflow.scroll`, is the existing behaviour.
