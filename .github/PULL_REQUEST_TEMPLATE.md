@@ -8,7 +8,6 @@
 
 ## Checklist
 
-- [ ] Every commit is signed off (`git commit -s`) — see [CONTRIBUTING.md](../CONTRIBUTING.md#sign-off-your-commits)
 - [ ] One change per pull request; unrelated fixes go in their own
 - [ ] `just check` passes (format, analyze, test)
 - [ ] Tests added or updated — a fixed bug gets a regression test
