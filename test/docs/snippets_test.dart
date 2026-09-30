@@ -501,6 +501,22 @@ Widget alertSnippets() {
   );
 }
 
+/// `docs/customization.md` — ImageStyle, inline images in an imageBuilder.
+Widget dataUrlImageBuilder() {
+  return GptMarkdown(
+    'text',
+    imageBuilder:
+        (context, url, width, height) =>
+            url.startsWith('data:')
+                ? Image.memory(
+                  UriData.parse(url).contentAsBytes(),
+                  width: width,
+                  height: height,
+                )
+                : Image.network(url, width: width, height: height),
+  );
+}
+
 void main() {
   test('every snippet in docs/ compiles', () {
     // Referencing them keeps the analyzer honest about unused declarations.
@@ -512,6 +528,7 @@ void main() {
     expect(CalloutMd().expString, isA<String>());
     expect(builderSnippets, isNotNull);
     expect(alertSnippets(), isA<GptMarkdown>());
+    expect(dataUrlImageBuilder(), isA<GptMarkdown>());
     expect(scopedPatterns(), hasLength(2));
     expect(delimitedPatterns(), hasLength(3));
     expect(plainTextSnippet, isNotNull);

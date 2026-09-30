@@ -49,6 +49,7 @@ import 'custom_widgets/inline_code.dart';
 import 'custom_widgets/inline_tap.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:collection';
 
 import 'package:flutter/rendering.dart';
 import 'package:flutter/scheduler.dart';

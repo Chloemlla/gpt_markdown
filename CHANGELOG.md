@@ -9,6 +9,9 @@
   replace it with `alertBuilder`. Apps that set `blockQuoteBuilder` and no
   `alertBuilder` keep their quote look. The parsed `MdBlockQuote` gains an
   optional `alert`; its `children` are unchanged.
+* Images with a `data:` URL — `![](data:image/png;base64,...)` — render (#32).
+  They went to `NetworkImage`, which cannot load one outside a browser. The
+  decoded bytes are cached, so rebuilds do not decode again.
 * `GptMarkdownStyleSheet.blockSpacing` sets the gap between blocks, in logical
   pixels (#41). Unset, it is the existing one empty line; it scales with the
   text either way, and extra blank lines in the source never widen it.

@@ -595,6 +595,22 @@ GptMarkdown(
 
 `width` and `height` come from the alt text when written as `WxH`.
 
+**Inline images.** A `data:` URL works wherever a network URL does:
+
+```markdown
+![chart](data:image/png;base64,iVBORw0KGgo...)
+```
+
+The default image widget decodes it — base64 or percent-encoded — and keeps
+the decoded bytes, so a streaming reply that rebuilds constantly does not
+decode or flicker again. Data that does not decode, or is not an image, shows
+the broken-image icon. A large image is decoded on the UI thread the first time
+it appears, which is fine at chart and screenshot sizes.
+
+An `imageBuilder` receives the `data:` URL as written. `CachedNetworkImage`
+and other network loaders cannot open one, so a builder that uses them should
+hand `data:` URLs to `Image.memory(UriData.parse(url).contentAsBytes())`.
+
 ---
 
 ## HrStyle

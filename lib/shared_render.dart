@@ -633,8 +633,69 @@ Widget orderedListItem(
   );
 }
 
+/// Where the default image widget loads [url] from.
+///
+/// A `data:` URL is decoded here: it is not a network address, and outside a
+/// browser `NetworkImage` cannot load one. Anything else goes to the network
+/// as before.
+ImageProvider _imageProvider(String url) {
+  if (!_isDataUrl(url)) {
+    return NetworkImage(url);
+  }
+  return MemoryImage(_dataUrlBytes(url));
+}
+
+bool _isDataUrl(String url) =>
+    url.length > 5 && url.substring(0, 5).toLowerCase() == 'data:';
+
+/// Decoded `data:` URLs, most recently used last.
+///
+/// A [MemoryImage] is identified by its byte list, so decoding afresh on every
+/// build — and a streaming reply rebuilds constantly — would make every build
+/// a new image: decoded again, and flickering while it is. Handing back the
+/// same list keeps the image cache hitting.
+final LinkedHashMap<String, Uint8List> _dataUrlCache = LinkedHashMap();
+
+/// Upper bound on [_dataUrlCache], in entries and in decoded bytes. Past
+/// either, the least recently used entries go.
+const int _dataUrlCacheEntries = 32;
+const int _dataUrlCacheBytes = 32 * 1024 * 1024;
+int _dataUrlCachedBytes = 0;
+
+/// The bytes of the `data:` URL [url], or an empty list when it is not an
+/// image or does not decode — which the image widget then reports through its
+/// error builder, like any other image that fails to load.
+Uint8List _dataUrlBytes(String url) {
+  final cached = _dataUrlCache.remove(url);
+  if (cached != null) {
+    _dataUrlCache[url] = cached;
+    return cached;
+  }
+  Uint8List bytes;
+  try {
+    final data = UriData.parse(url);
+    bytes =
+        data.mimeType.toLowerCase().startsWith('image/')
+            ? data.contentAsBytes()
+            : Uint8List(0);
+  } on FormatException {
+    bytes = Uint8List(0);
+  }
+  _dataUrlCache[url] = bytes;
+  _dataUrlCachedBytes += bytes.length;
+  while (_dataUrlCache.length > _dataUrlCacheEntries ||
+      (_dataUrlCachedBytes > _dataUrlCacheBytes && _dataUrlCache.length > 1)) {
+    final oldest = _dataUrlCache.keys.first;
+    _dataUrlCachedBytes -= _dataUrlCache.remove(oldest)!.length;
+  }
+  return bytes;
+}
+
 /// An image, honouring [GptMarkdownConfig.imageBuilder], [ImageStyle] and
 /// [GptMarkdownConfig.onImageTap].
+///
+/// [url] may be a `data:` URL — `data:image/png;base64,...` — as well as a
+/// network address.
 InlineSpan imageSpan(
   BuildContext context,
   GptMarkdownConfig config, {
@@ -659,7 +720,7 @@ InlineSpan imageSpan(
       width: width,
       height: height,
       child: Image(
-        image: NetworkImage(url),
+        image: _imageProvider(url),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress == null) {
             return child;
