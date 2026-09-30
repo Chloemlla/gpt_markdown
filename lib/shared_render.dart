@@ -634,8 +634,15 @@ Widget latexWidget(
 
 /// Owns the horizontal scroll state of one mounted table.
 class _TableViewport extends StatefulWidget {
-  const _TableViewport({required this.child});
+  const _TableViewport({
+    required this.child,
+    this.overflow = TableOverflow.scroll,
+  });
   final Widget child;
+
+  /// [TableOverflow.wrap] drops the scroll view, so the table is laid out
+  /// against the available width and shrinks its columns to fit it.
+  final TableOverflow overflow;
   @override
   State<_TableViewport> createState() => _TableViewportState();
 }
@@ -657,6 +664,9 @@ class _TableViewportState extends State<_TableViewport> {
   @override
   Widget build(BuildContext context) {
     final table = _TableIntrinsicsGuard(child: widget.child);
+    if (widget.overflow == TableOverflow.wrap) {
+      return table;
+    }
     // A horizontal scrollable never gets a scrollbar from the ambient
     // behaviour — `MaterialScrollBehavior.buildScrollbar` returns the child
     // unchanged for `Axis.horizontal` on every platform — so this widget is

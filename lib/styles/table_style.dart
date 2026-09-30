@@ -1,6 +1,22 @@
 import 'package:flutter/material.dart';
 import 'style_lerp.dart';
 
+/// What a table does when it is wider than the space it is given.
+enum TableOverflow {
+  /// Keep every column at its content width and scroll the table sideways.
+  /// The default.
+  scroll,
+
+  /// Fit the table to the available width and wrap the text in its cells.
+  ///
+  /// With the default column width a column shrinks toward its longest word,
+  /// so short columns stay whole. With more columns than the words allow,
+  /// words break rather than the table running off screen. A custom
+  /// [TableStyle.columnWidth] keeps its own minimum, which can leave the table
+  /// wider than the space; it is not scrolled then.
+  wrap,
+}
+
 /// How a table is drawn.
 ///
 /// Every field is optional. An unset field falls back to the theme, then to
@@ -20,6 +36,7 @@ class TableStyle {
     this.headerTextStyle,
     this.rowStripeColor,
     this.columnWidth,
+    this.overflow,
   });
 
   /// Grid colour. Defaults to `ColorScheme.onSurface`.
@@ -48,6 +65,10 @@ class TableStyle {
   /// Fill for alternating rows. Defaults to none.
   final Color? rowStripeColor;
 
+  /// What a table wider than the available width does. Defaults to
+  /// [TableOverflow.scroll].
+  final TableOverflow? overflow;
+
   /// This style, with any unset field taken from [other], field by field.
   TableStyle merge(TableStyle? other) {
     if (other == null) {
@@ -62,6 +83,7 @@ class TableStyle {
       headerTextStyle: headerTextStyle ?? other.headerTextStyle,
       rowStripeColor: rowStripeColor ?? other.rowStripeColor,
       columnWidth: columnWidth ?? other.columnWidth,
+      overflow: overflow ?? other.overflow,
     );
   }
 
@@ -77,6 +99,7 @@ class TableStyle {
       headerTextStyle: headerTextStyle,
       rowStripeColor: rowStripeColor,
       columnWidth: columnWidth,
+      overflow: overflow ?? TableOverflow.scroll,
     );
   }
 
@@ -90,6 +113,7 @@ class TableStyle {
     TextStyle? headerTextStyle,
     Color? rowStripeColor,
     TableColumnWidth? columnWidth,
+    TableOverflow? overflow,
   }) {
     return TableStyle(
       borderColor: borderColor ?? this.borderColor,
@@ -100,6 +124,7 @@ class TableStyle {
       headerTextStyle: headerTextStyle ?? this.headerTextStyle,
       rowStripeColor: rowStripeColor ?? this.rowStripeColor,
       columnWidth: columnWidth ?? this.columnWidth,
+      overflow: overflow ?? this.overflow,
     );
   }
 
@@ -123,6 +148,7 @@ class TableStyle {
       headerTextStyle: TextStyle.lerp(a.headerTextStyle, b.headerTextStyle, t),
       rowStripeColor: Color.lerp(a.rowStripeColor, b.rowStripeColor, t),
       columnWidth: t < 0.5 ? a.columnWidth : b.columnWidth,
+      overflow: t < 0.5 ? a.overflow : b.overflow,
     );
   }
 
@@ -139,7 +165,8 @@ class TableStyle {
         other.headerBackground == headerBackground &&
         other.headerTextStyle == headerTextStyle &&
         other.rowStripeColor == rowStripeColor &&
-        other.columnWidth == columnWidth;
+        other.columnWidth == columnWidth &&
+        other.overflow == overflow;
   }
 
   @override
@@ -152,5 +179,6 @@ class TableStyle {
     headerTextStyle,
     rowStripeColor,
     columnWidth,
+    overflow,
   );
 }

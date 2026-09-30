@@ -1,5 +1,11 @@
 ## Unreleased
 
+### Added
+
+* `TableStyle.overflow`: `TableOverflow.wrap` fits a wide table to the screen
+  and wraps its cells instead of scrolling it sideways (#93). The default,
+  `TableOverflow.scroll`, is the existing behaviour.
+
 ### Fixed
 
 * Custom `inlineComponents` / `components` whose regex uses `unicode: true`

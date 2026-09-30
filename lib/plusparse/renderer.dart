@@ -412,10 +412,12 @@ class PlusparseRenderer {
     final tableRadius = tableStyle.borderRadius;
     return _blockSpan(
       _TableViewport(
+        overflow: tableStyle.overflow ?? TableOverflow.scroll,
         child: Table(
           textDirection: config.textDirection,
           defaultColumnWidth:
-              tableStyle.columnWidth ?? const CustomTableColumnWidth(),
+              tableStyle.columnWidth ??
+              _defaultTableColumnWidth(tableStyle.overflow, maxCol),
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           border: TableBorder.all(
             width: tableStyle.borderWidth ?? 1,

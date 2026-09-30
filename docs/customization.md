@@ -416,7 +416,8 @@ GptMarkdown(
 ## TableStyle
 
 `borderColor` · `borderWidth` · `borderRadius` · `cellPadding` ·
-`headerBackground` · `headerTextStyle` · `rowStripeColor` · `columnWidth`
+`headerBackground` · `headerTextStyle` · `rowStripeColor` · `columnWidth` ·
+`overflow`
 
 ```dart
 styleSheet: const GptMarkdownStyleSheet(
@@ -436,11 +437,27 @@ sized to its content, which lays every cell out twice — once to measure, once
 for real. `columnWidth: FixedColumnWidth(120)` skips that measurement, which is
 the escape hatch for a large or streaming table.
 
-A flex policy is not. Tables already scroll horizontally when they exceed the
-available width, so the table is laid out against an unbounded width and a flex
-column has no finite width to take a share of: `FlexColumnWidth()` collapses
-the table to zero width and wraps every cell to one character a line.
-[comparison](comparison.md) has the measurements.
+A flex policy is not, with the default `overflow`. Tables scroll horizontally
+when they exceed the available width, so the table is laid out against an
+unbounded width and a flex column has no finite width to take a share of:
+`FlexColumnWidth()` collapses the table to zero width and wraps every cell to
+one character a line. [comparison](comparison.md) has the measurements.
+
+`overflow` decides what a table wider than the screen does:
+
+- `TableOverflow.scroll` (the default) keeps columns at their content width and
+  scrolls the table sideways.
+- `TableOverflow.wrap` fits the table to the available width and wraps the text
+  in its cells. Columns shrink toward their longest word, so short columns stay
+  whole; with more columns than the words allow, words break rather than the
+  table running off screen. The table is laid out against a bounded width here,
+  so a flex `columnWidth` works.
+
+```dart
+styleSheet: const GptMarkdownStyleSheet(
+  table: TableStyle(overflow: TableOverflow.wrap),
+),
+```
 
 ---
 

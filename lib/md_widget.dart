@@ -193,6 +193,62 @@ class CustomTableColumnWidth extends TableColumnWidth {
   }
 }
 
+/// The column width a table of [columnCount] columns uses when
+/// [TableStyle.columnWidth] is unset.
+TableColumnWidth _defaultTableColumnWidth(
+  TableOverflow? overflow,
+  int columnCount,
+) =>
+    overflow == TableOverflow.wrap
+        ? _WrapTableColumnWidth(columnCount)
+        : const CustomTableColumnWidth();
+
+/// [CustomTableColumnWidth] with a minimum that keeps words whole, for
+/// [TableOverflow.wrap].
+///
+/// A table too wide for its space takes an equal share off every column until
+/// each reaches its minimum. With the flat 50-pixel minimum that crushes a
+/// short column mid-word ("Feat" / "ure") while a long one keeps its width, so
+/// the minimum here is the longest word in the column.
+///
+/// It is capped at an equal share of the table width. The minimums then never
+/// add up to more than the space, so a wrapped table always fits: a long URL,
+/// or more columns than the words allow, breaks inside a word rather than
+/// running off a screen that no longer scrolls.
+class _WrapTableColumnWidth extends TableColumnWidth {
+  const _WrapTableColumnWidth(this.columnCount);
+
+  final int columnCount;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _WrapTableColumnWidth && other.columnCount == columnCount;
+
+  @override
+  int get hashCode => Object.hash(_WrapTableColumnWidth, columnCount);
+
+  @override
+  double maxIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) =>
+      const CustomTableColumnWidth().maxIntrinsicWidth(cells, containerWidth);
+
+  @override
+  double minIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) {
+    final cap =
+        containerWidth.isFinite
+            ? containerWidth / max(columnCount, 1)
+            : double.infinity;
+    double width = 0;
+    for (final cell in cells) {
+      width = max(width, cell.getMinIntrinsicWidth(double.infinity));
+      if (width >= cap) {
+        return cap;
+      }
+    }
+    return width;
+  }
+}
+
 /// Tells [CustomTableColumnWidth] when its table is being measured rather than
 /// laid out, so the column measurement stays legal under `IntrinsicWidth` and
 /// `IntrinsicHeight`.

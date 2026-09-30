@@ -1629,10 +1629,12 @@ class TableMd extends BlockMd {
     }
 
     return _TableViewport(
+      overflow: tableStyle.overflow ?? TableOverflow.scroll,
       child: Table(
         textDirection: config.textDirection,
         defaultColumnWidth:
-            tableStyle.columnWidth ?? const CustomTableColumnWidth(),
+            tableStyle.columnWidth ??
+            _defaultTableColumnWidth(tableStyle.overflow, maxCol),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         border: TableBorder.all(
           width: tableStyle.borderWidth ?? 1,
