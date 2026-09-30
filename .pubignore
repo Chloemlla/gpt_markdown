@@ -85,3 +85,8 @@ example/test/
 *.swp
 migrate_working_dir/
 **/doc/api/
+
+# FVM local Flutter SDK pin. `.gitignore` covers it, but this file replaces
+# `.gitignore` at publish time.
+.fvm/
+.fvmrc

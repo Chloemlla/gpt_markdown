@@ -52,3 +52,8 @@ docs/comparison.md
 
 # Blog drafts. Written here, published elsewhere — not part of the package.
 /block/
+
+# FVM — local Flutter SDK pin. Kept entirely untracked, version included.
+# No leading slash, so these match in nested apps (example/, widgetbook/) too.
+.fvm/
+.fvmrc

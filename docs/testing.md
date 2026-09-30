@@ -333,7 +333,7 @@ way to see what moved.
 ## README screenshots
 
 `./scripts/screenshots.sh` regenerates the showcase images in `screenshots/`
-from `tool/screenshots/`. One dark card per capability, laid out as a grid in
+from `tool/screenshots/`. One light card per capability, laid out as a grid in
 the README. They render through the test harness because that is
 the supported way to rasterise a widget to a file without opening a window.
 
@@ -349,12 +349,12 @@ CI and never gate a build.
 > URLs point at `main`, so an uncommitted image simply does not exist yet.
 
 > [!NOTE]
-> Two things in the images are harness artefacts, not defects in what a reader
-> would see. Text that resolves to a null font family — the code block's copy
-> button, for one — draws in the test font, whose glyphs are filled boxes, so
-> that button is switched off for the screenshots. Fonts are otherwise loaded
-> from paths resolved out of the SDK and `.dart_tool/package_config.json`, never
-> hardcoded.
+> The test renderer draws a blurred `BoxShadow` as a hard slab, so the cards
+> use a border instead of a shadow. Text that resolves to a null font family —
+> the code block's copy button, for one — would draw in the test font, whose
+> glyphs are filled boxes; `fonts.dart` registers Roboto under the test font's
+> names so it renders. Fonts are otherwise loaded from paths resolved out of the
+> SDK and `.dart_tool/package_config.json`, never hardcoded.
 
 ## Documentation snippets are compiled
 

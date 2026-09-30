@@ -84,10 +84,11 @@ flutter pub add gpt_markdown
 ```
 
 ```dart
-GptMarkdown(
+// Render a reply while it streams in.
+final view = GptMarkdown(
   reply,
-  onLinkTap: open,
   isStreaming: true,
+  onLinkTap: (url, title) => launch(url),
   animation: GptMarkdownAnimation.fade,
 );
 ```
@@ -110,18 +111,18 @@ Inline code like `TextSpan` and `PlaceholderAlignment.baseline` wraps across lin
 
 Citations render as tags too [1]
 """,
-  'inline-patterns': """
-### Standup
+  'inline-components': """
+### Sprint review
 
-@ada shipped the parser fix :tada: — thread is in #design-review
+@ada shipped the parser fix in #release :rocket:
 
-- Fixed GH-6124, blank links on iOS
-- @grace picks up tables next :rocket:
-- Shortcodes become widgets, mentions become chips
+- GH-6124 Blank links on iOS {{status:done}}
+- GH-6131 Table overflow on web {{status:review}}
+- GH-6140 Caret drift in RTL {{status:blocked}}
 
-> #2959 stays plain text, because only known names match.
+@grace takes {{file:table_layout.dart}} next :tada:
 
-Your app supplies the names and the builder; the package supplies the matching.
+> #2959 stays plain text — only names your app knows become components.
 """,
 };
 
@@ -155,14 +156,28 @@ void main() {
 
 /// Channels, people and shortcodes this showcase knows about.
 ///
-/// Nothing generic is matched: `#2959` in the standup scene stays plain text
-/// precisely because it is not in this list. That is the package's advice
+/// Nothing generic is matched: `#2959` in the components scene stays plain
+/// text precisely because it is not in this list. That is the package's advice
 /// rendered as a picture.
-const _channels = ['design-review', 'general'];
-const _people = ['ada', 'grace', 'linus'];
-const _shortcodes = <String, IconData>{
-  'tada': Icons.celebration_rounded,
-  'rocket': Icons.rocket_launch_rounded,
+const _channels = ['release', 'design-review'];
+
+/// Each person's initials and avatar colour.
+const _people = <String, ({String initials, Color color})>{
+  'ada': (initials: 'AL', color: Color(0xFF7C3AED)),
+  'grace': (initials: 'GH', color: Color(0xFF0EA5E9)),
+  'linus': (initials: 'LT', color: Color(0xFFF97316)),
+};
+
+const _shortcodes = <String, (IconData, Color)>{
+  'tada': (Icons.celebration_rounded, Color(0xFFDB2777)),
+  'rocket': (Icons.rocket_launch_rounded, Color(0xFF4F46E5)),
+};
+
+/// Status pills: label, dot colour, background.
+const _statuses = <String, (String, Color, Color)>{
+  'done': ('Done', Color(0xFF16A34A), Color(0xFFDCFCE7)),
+  'review': ('In review', Color(0xFFD97706), Color(0xFFFEF3C7)),
+  'blocked': ('Blocked', Color(0xFFDC2626), Color(0xFFFEE2E2)),
 };
 
 /// The inline syntax an app layers on top of Markdown.
@@ -177,25 +192,39 @@ List<InlinePattern> _showcasePatterns(BuildContext context) {
       prefix: '#',
       knownNames: _channels,
       builder:
-          (context, match, style) => _chipSpan(
-            icon: Icons.tag_rounded,
-            label: _withoutPrefix(match.group(0)),
+          (context, match, style) => _pill(
             style: style,
-            background: colors.primaryContainer,
-            foreground: colors.onPrimaryContainer,
+            background: colors.primary.withValues(alpha: 0.08),
+            border: colors.primary.withValues(alpha: 0.18),
+            children: [
+              Icon(
+                Icons.tag_rounded,
+                size: (style.fontSize ?? 14) * 0.95,
+                color: colors.primary,
+              ),
+              const SizedBox(width: 2),
+              _pillLabel(_withoutPrefix(match.group(0)), style, colors.primary),
+            ],
           ),
     ),
     InlinePattern.prefixed(
       prefix: '@',
-      knownNames: _people,
-      builder:
-          (context, match, style) => _chipSpan(
-            icon: Icons.alternate_email_rounded,
-            label: _withoutPrefix(match.group(0)),
-            style: style,
-            background: colors.tertiaryContainer,
-            foreground: colors.onTertiaryContainer,
-          ),
+      knownNames: _people.keys,
+      builder: (context, match, style) {
+        final name = _withoutPrefix(match.group(0));
+        final person = _people[name]!;
+        return _pill(
+          style: style,
+          leftInset: 2,
+          background: person.color.withValues(alpha: 0.10),
+          border: person.color.withValues(alpha: 0.20),
+          children: [
+            _Avatar(initials: person.initials, color: person.color),
+            const SizedBox(width: 5),
+            _pillLabel(name, style, person.color),
+          ],
+        );
+      },
     ),
     // Shortcodes resolve to icons rather than emoji: a test renderer has no
     // emoji font, so a glyph would come out as an empty box.
@@ -204,16 +233,16 @@ List<InlinePattern> _showcasePatterns(BuildContext context) {
       knownNames: _shortcodes.keys,
       builder: (context, match, style) {
         final name = match.namedGroup('name');
-        final icon = name == null ? null : _shortcodes[name];
-        if (icon == null) {
+        final entry = name == null ? null : _shortcodes[name];
+        if (entry == null) {
           return TextSpan(text: match.group(0), style: style);
         }
         return WidgetSpan(
           alignment: PlaceholderAlignment.middle,
           child: Icon(
-            icon,
-            size: (style.fontSize ?? 14) * 1.1,
-            color: colors.primary,
+            entry.$1,
+            size: (style.fontSize ?? 14) * 1.15,
+            color: entry.$2,
           ),
         );
       },
@@ -227,8 +256,78 @@ List<InlinePattern> _showcasePatterns(BuildContext context) {
             style: style.copyWith(
               color: colors.primary,
               fontWeight: FontWeight.w600,
+              fontFamily: 'JetBrainsMono',
+              fontSize: (style.fontSize ?? 14) * 0.9,
             ),
           ),
+    ),
+  ];
+}
+
+/// Payloads the parser must not touch: `{{status:done}}`, `{{file:a_b.dart}}`.
+///
+/// A file name full of underscores is exactly what Markdown would eat as
+/// emphasis, which is why these are directives and not patterns.
+List<InlineDirective> _showcaseDirectives(BuildContext context) {
+  final colors = Theme.of(context).colorScheme;
+
+  return [
+    InlineDirective(
+      open: '{{',
+      close: '}}',
+      builder: (context, payload, style) {
+        final split = payload.indexOf(':');
+        final kind = split < 0 ? payload : payload.substring(0, split);
+        final value = split < 0 ? '' : payload.substring(split + 1);
+        final size = style.fontSize ?? 14;
+
+        if (kind == 'status' && _statuses.containsKey(value)) {
+          final (label, dot, background) = _statuses[value]!;
+          return _pill(
+            style: style,
+            background: background,
+            radius: 99,
+            children: [
+              Container(
+                width: 6,
+                height: 6,
+                decoration: BoxDecoration(color: dot, shape: BoxShape.circle),
+              ),
+              const SizedBox(width: 5),
+              _pillLabel(
+                label,
+                style.copyWith(fontSize: size * 0.8),
+                Color.lerp(dot, Colors.black, 0.35)!,
+              ),
+            ],
+          );
+        }
+        if (kind == 'file') {
+          return _pill(
+            style: style,
+            background: colors.surfaceContainerHighest.withValues(alpha: 0.6),
+            border: colors.outlineVariant,
+            children: [
+              Icon(
+                Icons.description_outlined,
+                size: size * 0.95,
+                color: colors.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              _pillLabel(
+                value,
+                style.copyWith(
+                  fontFamily: 'JetBrainsMono',
+                  fontSize: size * 0.85,
+                  fontWeight: FontWeight.w500,
+                ),
+                colors.onSurface,
+              ),
+            ],
+          );
+        }
+        return TextSpan(text: '{{$payload}}', style: style);
+      },
     ),
   ];
 }
@@ -241,44 +340,92 @@ String _withoutPrefix(String? token) {
   return token.substring(1);
 }
 
-/// A rounded chip that sits on the surrounding text baseline.
-InlineSpan _chipSpan({
-  required IconData icon,
-  required String label,
+/// A rounded component centred on the line, sized to sit inside it so the
+/// paragraph keeps its rhythm.
+InlineSpan _pill({
   required TextStyle style,
   required Color background,
-  required Color foreground,
+  required List<Widget> children,
+  Color? border,
+  double radius = 7,
+  double leftInset = 7,
 }) {
   final size = style.fontSize ?? 14;
   return WidgetSpan(
-    alignment: PlaceholderAlignment.baseline,
-    baseline: TextBaseline.alphabetic,
-    child: Container(
-      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 1),
-      decoration: BoxDecoration(
-        color: background,
-        borderRadius: BorderRadius.circular(6),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(icon, size: size * 0.9, color: foreground),
-          const SizedBox(width: 3),
-          Text(
-            label,
-            style: style.copyWith(
-              color: foreground,
-              fontWeight: FontWeight.w600,
-              height: 1.2,
-            ),
-          ),
-        ],
+    alignment: PlaceholderAlignment.middle,
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 1),
+      child: Container(
+        height: size * 1.5,
+        padding: EdgeInsets.only(left: leftInset, right: 7),
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(radius),
+          border: border == null ? null : Border.all(color: border),
+        ),
+        child: Row(mainAxisSize: MainAxisSize.min, children: children),
       ),
     ),
   );
 }
 
-/// One dark card on a slate page.
+Widget _pillLabel(String text, TextStyle style, Color color) {
+  return Text(
+    text,
+    style: style.copyWith(color: color, fontWeight: FontWeight.w600, height: 1),
+  );
+}
+
+/// Initials on a coloured disc — what a mention looks like in a chat app.
+class _Avatar extends StatelessWidget {
+  const _Avatar({required this.initials, required this.color});
+
+  final String initials;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 17,
+      height: 17,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      child: Text(
+        initials,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 7.5,
+          fontWeight: FontWeight.w700,
+          height: 1,
+        ),
+      ),
+    );
+  }
+}
+
+/// The few places the defaults are softened for the images.
+///
+/// Material's checkbox reserves a 48 px tap target, which spaces a task list
+/// far apart, and default table rules are a hard black. Everything else is the
+/// package's own styling.
+GptMarkdownStyleSheet _styleSheet(ColorScheme colors) {
+  return GptMarkdownStyleSheet(
+    checkbox: const CheckboxStyle(
+      size: 18,
+      gapAfterBox: 10,
+      borderRadius: Radius.circular(4),
+    ),
+    table: TableStyle(
+      borderColor: colors.outlineVariant,
+      borderRadius: const Radius.circular(8),
+      headerBackground: colors.surfaceContainerHigh,
+      headerTextStyle: const TextStyle(fontWeight: FontWeight.w600),
+      cellPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+    ),
+  );
+}
+
+/// One light card on a soft page.
 class _Showcase extends StatelessWidget {
   const _Showcase({required this.markdown});
 
@@ -301,7 +448,7 @@ class _Showcase extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
-                colors: [Color(0xFF2B313C), Color(0xFF171B22)],
+                colors: [Color(0xFFF4F6FB), Color(0xFFE4E9F2)],
               ),
             ),
             child: _Card(markdown: markdown),
@@ -321,56 +468,53 @@ class _Card extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Plain Material 3 dark, so the image shows the defaults a reader gets
-    // before touching any of the styling API.
-    final theme = ThemeData(
+    // Material 3 light with a white surface, so the image shows the package's
+    // own styling rather than a tint the theme would add.
+    final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
+      brightness: Brightness.light,
+      colorSchemeSeed: const Color(0xFF4F46E5),
       fontFamily: 'Roboto',
-      extensions: [GptMarkdownThemeData(brightness: Brightness.dark)],
+    );
+    final theme = base.copyWith(
+      colorScheme: base.colorScheme.copyWith(surface: Colors.white),
+      extensions: [GptMarkdownThemeData(brightness: Brightness.light)],
     );
 
     return SizedBox(
       width: _cardWidth,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x59000000),
-              blurRadius: 26,
-              offset: Offset(0, 10),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: const Color(0xFFE3E7EE)),
+          // No shadow: the test renderer draws a blurred shadow as a hard
+          // slab, so the border alone separates card from page.
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
           child: Theme(
             data: theme,
-            child: Material(
-              color: theme.colorScheme.surface,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const _TitleBar(),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(20, 16, 20, 22),
-                    child: GptMarkdown(
-                      markdown,
-                      inlinePatterns: _showcasePatterns(context),
-                      // The code block's copy button resolves to a null font
-                      // family, so `flutter test` draws its label in the test
-                      // font — a row of filled boxes. A reader's device draws
-                      // it properly, but the screenshot cannot, so the header
-                      // shows the language label alone.
-                      styleSheet: const GptMarkdownStyleSheet(
-                        codeBlock: CodeBlockStyle(showCopyButton: false),
-                      ),
+            child: Builder(
+              builder:
+                  (context) => Material(
+                    color: theme.colorScheme.surface,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const _TitleBar(),
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
+                          child: GptMarkdown(
+                            markdown,
+                            inlinePatterns: _showcasePatterns(context),
+                            inlineDirectives: _showcaseDirectives(context),
+                            styleSheet: _styleSheet(theme.colorScheme),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
             ),
           ),
         ),
@@ -385,7 +529,7 @@ class _TitleBar extends StatelessWidget {
   const _TitleBar();
 
   /// The familiar macOS traffic lights. Recognisable at a glance, and the one
-  /// spot of colour in an otherwise monochrome frame.
+  /// spot of colour in an otherwise quiet frame.
   static const _lights = [
     Color(0xFFFF5F57),
     Color(0xFFFEBC2E),
@@ -395,10 +539,11 @@ class _TitleBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 38,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      height: 36,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
       decoration: const BoxDecoration(
-        border: Border(bottom: BorderSide(color: Color(0x1FFFFFFF))),
+        color: Color(0xFFF8F9FC),
+        border: Border(bottom: BorderSide(color: Color(0xFFECEFF4))),
       ),
       child: Row(
         children: [

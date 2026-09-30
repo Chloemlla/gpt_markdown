@@ -13,6 +13,12 @@
 #   refuses a dirty tree or a changelog with no heading for the version in
 #   pubspec.yaml, then prompts before pushing the tag. Pushing the tag is what
 #   publishes to pub.dev — the publish workflow triggers on nothing else.
+# * If an FVM pin exists locally (`.fvm/`, gitignored), every recipe and the
+#   scripts they call use that SDK. Without it — CI, fresh clones — they use
+#   whatever `flutter` is on PATH.
+
+_fvm_bin := justfile_directory() / ".fvm/flutter_sdk/bin"
+export PATH := if path_exists(_fvm_bin) == "true" { _fvm_bin + ":" + env("PATH") } else { env("PATH") }
 
 _default:
     @just --list --unsorted
@@ -48,3 +54,19 @@ release-check: check publish-dry score
 # Ship it. Verifies, then asks before tagging; CI publishes from the tag.
 release:
     ./scripts/release.sh
+
+# Run the showcase app. Extra args go to `flutter run`, e.g. `-t lib/rtl_demo.dart`.
+example device="macos" *args: (_run "example" device args)
+
+# Run the AI chat harness, e.g. `--dart-define=OPENAI_API_KEY=...`.
+ai-chat device="macos" *args: (_run "example_ai_chat" device args)
+
+# Run the widgetbook catalogue.
+widgetbook device="macos" *args: (_run "widgetbook" device args)
+
+_run app device *args:
+    cd {{app}} && flutter pub get && flutter run -d {{device}} {{args}}
+
+# Which Flutter SDK the recipes above resolve to.
+which-flutter:
+    @which flutter && flutter --version | head -1
