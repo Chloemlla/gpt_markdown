@@ -77,49 +77,11 @@ What we look for:
   style as the entries already there.
 - **Docs** updated when behaviour or API changes.
 
-## Sign off your commits
-
-Every commit in a pull request must be signed off under the
-[Developer Certificate of Origin](https://developercertificate.org/) (DCO). A
-sign-off is a line at the end of the commit message stating that you wrote the
-change, or otherwise have the right to submit it under the project's
-[license](LICENSE):
-
-```
-Signed-off-by: Your Name <you@example.com>
-```
-
-Git adds it for you with `-s`:
-
-```sh
-git commit -s -m "Fix table width inside IntrinsicWidth"
-```
-
-The name and email come from your `user.name` and `user.email` settings and
-must match the commit's author.
-
-A sign-off is **not** a cryptographic signature. You do not need GPG or SSH
-commit signing, and there is no CLA to sign.
-
-The **DCO** check on every pull request verifies this. If it fails, add the
-sign-off to every commit on your branch and push again:
-
-```sh
-git rebase --signoff origin/main
-git push --force-with-lease
-```
-
-You can run the same check locally before pushing:
-
-```sh
-./scripts/dco.sh origin/main HEAD
-```
-
 ## After you open a pull request
 
-A maintainer is requested for review automatically. CI runs `just check` and
-the DCO check; both need to pass. Expect review comments — most pull requests
-go through a round or two.
+A maintainer is requested for review automatically. CI runs `just check`,
+which needs to pass. Expect review comments — most pull requests go through a
+round or two.
 
 ## License
 
