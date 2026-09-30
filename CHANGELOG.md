@@ -5,6 +5,11 @@
 * Custom `inlineComponents` / `components` whose regex uses `unicode: true`
   (for example `\p{L}`) now match. The flag was dropped when the patterns were
   combined, so such components silently matched nothing (#114).
+* `GptMarkdown` no longer throws inside `IntrinsicWidth` or `IntrinsicHeight`
+  — the usual way to shrink-wrap a chat bubble — when the message holds a
+  table or a horizontal rule (#107). Normal layout is unchanged. Still open on
+  the legacy pipeline (`inlineComponents` / `components`) in debug builds,
+  where Flutter asserts on the dry baseline of block placeholders.
 
 ## 1.3.0
 

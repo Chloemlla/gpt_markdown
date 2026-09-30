@@ -656,6 +656,7 @@ class _TableViewportState extends State<_TableViewport> {
 
   @override
   Widget build(BuildContext context) {
+    final table = _TableIntrinsicsGuard(child: widget.child);
     // A horizontal scrollable never gets a scrollbar from the ambient
     // behaviour — `MaterialScrollBehavior.buildScrollbar` returns the child
     // unchanged for `Axis.horizontal` on every platform — so this widget is
@@ -672,7 +673,7 @@ class _TableViewportState extends State<_TableViewport> {
         return SingleChildScrollView(
           controller: _controller,
           scrollDirection: Axis.horizontal,
-          child: widget.child,
+          child: table,
         );
       case TargetPlatform.linux:
       case TargetPlatform.macOS:
@@ -696,7 +697,7 @@ class _TableViewportState extends State<_TableViewport> {
               scrollDirection: Axis.horizontal,
               child: Padding(
                 padding: const EdgeInsets.only(bottom: _barStrip),
-                child: widget.child,
+                child: table,
               ),
             ),
           ),
