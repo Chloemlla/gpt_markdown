@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../custom_widgets/inline_code.dart';
+import 'alert_style.dart';
 import 'block_quote_style.dart';
 import 'heading_style.dart';
 import 'link_style.dart';
@@ -53,6 +54,7 @@ class GptMarkdownStyleSheet {
     this.hr,
     this.sourceTag,
     this.latex,
+    this.alert,
   });
 
   /// How blockquotes are drawn.
@@ -91,6 +93,9 @@ class GptMarkdownStyleSheet {
   /// How rendered maths are drawn.
   final LatexStyle? latex;
 
+  /// How alerts — quotes opening with `[!NOTE]` and the like — are drawn.
+  final AlertStyle? alert;
+
   /// This sheet, with any unset value taken from [other], field by field.
   GptMarkdownStyleSheet merge(GptMarkdownStyleSheet? other) {
     if (other == null) {
@@ -109,6 +114,7 @@ class GptMarkdownStyleSheet {
       hr: hr?.merge(other.hr) ?? other.hr,
       sourceTag: sourceTag?.merge(other.sourceTag) ?? other.sourceTag,
       latex: latex?.merge(other.latex) ?? other.latex,
+      alert: alert?.merge(other.alert) ?? other.alert,
     );
   }
 
@@ -126,6 +132,7 @@ class GptMarkdownStyleSheet {
     HrStyle? hr,
     SourceTagStyle? sourceTag,
     LatexStyle? latex,
+    AlertStyle? alert,
   }) {
     return GptMarkdownStyleSheet(
       blockQuote: blockQuote ?? this.blockQuote,
@@ -140,6 +147,7 @@ class GptMarkdownStyleSheet {
       hr: hr ?? this.hr,
       sourceTag: sourceTag ?? this.sourceTag,
       latex: latex ?? this.latex,
+      alert: alert ?? this.alert,
     );
   }
 
@@ -165,6 +173,7 @@ class GptMarkdownStyleSheet {
       hr: HrStyle.lerp(a?.hr, b?.hr, t),
       sourceTag: SourceTagStyle.lerp(a?.sourceTag, b?.sourceTag, t),
       latex: LatexStyle.lerp(a?.latex, b?.latex, t),
+      alert: AlertStyle.lerp(a?.alert, b?.alert, t),
     );
   }
 
@@ -185,7 +194,8 @@ class GptMarkdownStyleSheet {
         other.image == image &&
         other.hr == hr &&
         other.sourceTag == sourceTag &&
-        other.latex == latex;
+        other.latex == latex &&
+        other.alert == alert;
   }
 
   @override
@@ -202,5 +212,6 @@ class GptMarkdownStyleSheet {
     hr,
     sourceTag,
     latex,
+    alert,
   );
 }

@@ -144,7 +144,24 @@ List<MdNode> parseBlocks(
         }
         i += 1;
       }
-      out.add(MdBlockQuote(children: parseBlocks(inner, useDollar, registry)));
+      final alertType =
+          inner.isEmpty ? null : MarkdownAlertType.fromMarker(inner.first);
+      out.add(
+        MdBlockQuote(
+          children: parseBlocks(inner, useDollar, registry),
+          alert:
+              alertType == null
+                  ? null
+                  : MdAlert(
+                    type: alertType,
+                    children: parseBlocks(
+                      inner.sublist(1),
+                      useDollar,
+                      registry,
+                    ),
+                  ),
+        ),
+      );
       continue;
     }
 

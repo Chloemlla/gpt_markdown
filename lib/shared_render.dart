@@ -170,36 +170,189 @@ InlineSpan blockQuoteSpan(
   GptMarkdownConfig config, {
   required Widget Function(GptMarkdownConfig conf) buildContent,
 }) {
+  return _blockSpanOf(
+    _blockQuoteWidget(context, config, buildContent: buildContent),
+  );
+}
+
+/// [blockQuoteSpan]'s widget, before it is placed in the text.
+Widget _blockQuoteWidget(
+  BuildContext context,
+  GptMarkdownConfig config, {
+  required Widget Function(GptMarkdownConfig conf) buildContent,
+}) {
   final style = (resolvedStyleSheet(context, config).blockQuote ??
           const BlockQuoteStyle())
       .resolve(Theme.of(context).colorScheme);
-
-  var quotedConfig = config;
-  final textStyle = style.textStyle;
-  if (textStyle != null) {
-    final base = config.style;
-    quotedConfig = config.copyWith(
-      style: base == null ? textStyle : base.merge(textStyle),
-    );
-  }
-  final content = buildContent(quotedConfig);
+  final content = buildContent(_withTextStyle(config, style.textStyle));
 
   final builder = config.blockQuoteBuilder;
-  final Widget quote =
-      builder == null
-          ? defaultQuoteWidget(context, content, style, config.textDirection)
-          : builder(context, content, style);
+  return builder == null
+      ? defaultQuoteWidget(context, content, style, config.textDirection)
+      : builder(context, content, style);
+}
 
+/// [config] with [textStyle] merged over its style.
+GptMarkdownConfig _withTextStyle(
+  GptMarkdownConfig config,
+  TextStyle? textStyle,
+) {
+  if (textStyle == null) {
+    return config;
+  }
+  final base = config.style;
+  return config.copyWith(
+    style: base == null ? textStyle : base.merge(textStyle),
+  );
+}
+
+/// A block widget placed in the text: it owns its line.
+InlineSpan _blockSpanOf(Widget block) {
   return TextSpan(
     children: [
       BlockWidgetSpan(
         alignment: PlaceholderAlignment.bottom,
         baseline: null,
-        child: MarkdownTextScaling.wrap(quote, enabled: false),
-        bare: quote,
+        child: MarkdownTextScaling.wrap(block, enabled: false),
+        bare: block,
       ),
     ],
   );
+}
+
+/// Whether a quote carrying an alert is drawn as an alert.
+///
+/// Not when the app replaced quotes with [GptMarkdownConfig.blockQuoteBuilder]
+/// and gave no [GptMarkdownConfig.alertBuilder]: its alerts keep going to its
+/// quote builder, as they did before alerts were recognised.
+bool _rendersAlerts(GptMarkdownConfig config) =>
+    config.alertBuilder != null || config.blockQuoteBuilder == null;
+
+/// An alert, honouring [GptMarkdownConfig.alertBuilder] and [AlertStyle].
+///
+/// [buildContent] receives the alert-scoped config and returns the body,
+/// without the marker line. [buildQuoteContent] returns the whole quote as
+/// written, marker included; it runs only if the builder asks for
+/// [AlertBuildDetails.asBlockQuote].
+InlineSpan alertSpan(
+  BuildContext context,
+  GptMarkdownConfig config, {
+  required MarkdownAlertType type,
+  required Widget Function(GptMarkdownConfig conf) buildContent,
+  required Widget Function(GptMarkdownConfig conf) buildQuoteContent,
+}) {
+  final sheet = resolvedStyleSheet(context, config).alert ?? const AlertStyle();
+  final style = sheet.resolve(type, Theme.of(context).colorScheme);
+  final content = buildContent(_withTextStyle(config, style.textStyle));
+  final title = _alertTitle(context, config, style);
+
+  late final AlertBuildDetails details;
+  details = AlertBuildDetails(
+    context: context,
+    config: config,
+    type: type,
+    style: style,
+    title: title,
+    content: content,
+    buildDefault: () => _defaultAlertWidget(details, config.textDirection),
+    buildQuote:
+        () =>
+            _blockQuoteWidget(context, config, buildContent: buildQuoteContent),
+  );
+  final builder = config.alertBuilder;
+  return _blockSpanOf(
+    builder == null ? details.defaultAlert() : builder(context, details),
+  );
+}
+
+/// The icon and title of an alert, or an empty box when [style] hides both.
+///
+/// One paragraph, so it follows the same text scaling as the body: the icon
+/// is an inline widget and scales with the text beside it.
+Widget _alertTitle(
+  BuildContext context,
+  GptMarkdownConfig config,
+  AlertStyle style,
+) {
+  final text = style.title ?? '';
+  final icon = style.icon;
+  final showIcon = (style.showIcon ?? true) && icon != null;
+  if (text.isEmpty && !showIcon) {
+    return const SizedBox.shrink();
+  }
+  var titleStyle = (config.style ?? const TextStyle()).copyWith(
+    color: style.color,
+    fontWeight: FontWeight.w600,
+  );
+  final override = style.titleStyle;
+  if (override != null) {
+    titleStyle = titleStyle.merge(override);
+  }
+  final fontSize =
+      titleStyle.fontSize ?? DefaultTextStyle.of(context).style.fontSize ?? 14;
+  return config.getRich(
+    TextSpan(
+      style: titleStyle,
+      children: [
+        if (showIcon)
+          WidgetSpan(
+            alignment: PlaceholderAlignment.middle,
+            child: Padding(
+              padding: EdgeInsetsDirectional.only(
+                end: text.isEmpty ? 0 : fontSize * 0.4,
+              ),
+              child: Icon(
+                icon,
+                size: style.iconSize ?? fontSize * 1.15,
+                color: style.color,
+              ),
+            ),
+          ),
+        if (text.isNotEmpty) TextSpan(text: text),
+      ],
+    ),
+    ambientScaling: config.blocksRenderDirectly,
+  );
+}
+
+/// The default alert: the title row over the body, beside a bar in the
+/// accent colour, with optional padding, background and margin.
+Widget _defaultAlertWidget(AlertBuildDetails details, TextDirection direction) {
+  final style = details.style;
+  final hasTitle = details.title is! SizedBox;
+  Widget child = Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (hasTitle) ...[details.title, SizedBox(height: style.titleGap ?? 4)],
+      details.content,
+    ],
+  );
+  final padding = style.padding;
+  if (padding != null) {
+    child = Padding(padding: padding, child: child);
+  }
+  child = BlockQuoteWidget(
+    color: style.color!,
+    direction: direction,
+    width: style.barWidth ?? 3,
+    child: child,
+  );
+  final background = style.backgroundColor;
+  if (background != null && background.a > 0) {
+    child = ColoredBox(color: background, child: child);
+  }
+  // Clipped rather than decorated, so the bar follows the rounded corners
+  // instead of poking out of them square.
+  final radius = style.borderRadius;
+  if (radius != null && radius != Radius.zero) {
+    child = ClipRRect(borderRadius: BorderRadius.all(radius), child: child);
+  }
+  final margin = style.margin;
+  if (margin != null) {
+    child = Padding(padding: margin, child: child);
+  }
+  return Directionality(textDirection: direction, child: child);
 }
 
 /// The default block quote: a bar, optional padding, background and margin.

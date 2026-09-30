@@ -29,7 +29,7 @@
 
 ## ✨ Why gpt_markdown?
 
-- **Built for AI output** — Markdown, LaTeX, code blocks, tables, citations, images, task lists, and mixed rich content in one response.
+- **Built for AI output** — Markdown, LaTeX, code blocks, tables, alerts, citations, images, task lists, and mixed rich content in one response.
 - **Streaming that stays fast** — settled segments are reused while the live tail updates. At 12 KB, each update is 31× faster than in 1.2.1—or 74× faster with the lazy sliver. [See the benchmarks](docs/benchmark.md).
 - **Production-level control** — style sheets, Flutter theme extensions, component builders, callbacks, and custom components.
 - **Extensible inline UI** — add `@mentions`, `#channels`, `:emoji:`, issue references, and product-specific syntax without forking the renderer.

@@ -462,6 +462,45 @@ const readmeStyleSheet = GptMarkdownStyleSheet(
   codeBlock: CodeBlockStyle(borderRadius: Radius.circular(12)),
 );
 
+/// `docs/customization.md` — AlertStyle.
+Widget alertSnippets() {
+  return GptMarkdown(
+    'text',
+    styleSheet: const GptMarkdownStyleSheet(
+      alert: AlertStyle(
+        barWidth: 4,
+        backgroundColor: Color(0x0A000000),
+        borderRadius: Radius.circular(8),
+        warning: AlertStyle(
+          title: 'Heads up',
+          icon: Icons.bolt,
+          color: Colors.deepOrange,
+        ),
+        tip: AlertStyle(title: '', showIcon: false), // body only
+      ),
+    ),
+    alertBuilder: (context, details) {
+      if (details.type == MarkdownAlertType.tip) {
+        return details.asBlockQuote(); // no alert for tips
+      }
+      return Card(
+        color: details.style.color!.withValues(alpha: 0.08),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              details.title,
+              const SizedBox(height: 4),
+              details.content,
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
 void main() {
   test('every snippet in docs/ compiles', () {
     // Referencing them keeps the analyzer honest about unused declarations.
@@ -472,6 +511,7 @@ void main() {
     expect(ShoutMd().exp, isA<RegExp>());
     expect(CalloutMd().expString, isA<String>());
     expect(builderSnippets, isNotNull);
+    expect(alertSnippets(), isA<GptMarkdown>());
     expect(scopedPatterns(), hasLength(2));
     expect(delimitedPatterns(), hasLength(3));
     expect(plainTextSnippet, isNotNull);

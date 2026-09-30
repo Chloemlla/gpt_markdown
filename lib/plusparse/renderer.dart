@@ -189,6 +189,48 @@ class PlusparseRenderer {
         return [
           _blockSpan(latexWidget(context, config, tex: tex, inline: false)),
         ];
+      case MdBlockQuote(:final children, :final alert)
+          when alert != null && _rendersAlerts(config):
+        Widget quoteContent(GptMarkdownConfig conf) => conf.getRich(
+          TextSpan(
+            children: _blockSpans(
+              context,
+              children,
+              conf.copyWith(blocksRenderDirectly: false),
+            ),
+          ),
+          ambientScaling: conf.blocksRenderDirectly,
+        );
+        // Built once, as for a quote below; the title is not part of the
+        // reveal, only the body is.
+        List<InlineSpan>? content;
+        InlineSpan build(SpanTransform transform) {
+          final child = alertSpan(
+            context,
+            config,
+            type: alert.type,
+            buildContent:
+                (conf) => conf.getRich(
+                  TextSpan(
+                    children: transform(
+                      content ??= _blockSpans(
+                        context,
+                        alert.children,
+                        conf.copyWith(blocksRenderDirectly: false),
+                      ),
+                    ),
+                  ),
+                  ambientScaling: conf.blocksRenderDirectly,
+                ),
+            buildQuoteContent: quoteContent,
+          );
+          return RevealableSpan(
+            content: content!,
+            rebuild: build,
+            children: [child],
+          );
+        }
+        return [build(_identity)];
       case MdBlockQuote(:final children):
         // Build once under the actual quote style. Counting an independently
         // rendered copy used to double the work at EVERY nesting level.

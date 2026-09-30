@@ -813,15 +813,31 @@ class BlockQuote extends InlineMd {
     }
     var data = dataBuilder.toString().trim();
 
+    Widget render(GptMarkdownConfig conf, String source) => conf.getRich(
+      TextSpan(
+        children: MarkdownComponent.generate(context, source, conf, true),
+      ),
+    );
+
+    final newline = data.indexOf('\n');
+    final alertType = MarkdownAlertType.fromMarker(
+      newline == -1 ? data : data.substring(0, newline),
+    );
+    if (alertType != null && _rendersAlerts(config)) {
+      final body = newline == -1 ? '' : data.substring(newline + 1).trim();
+      return alertSpan(
+        context,
+        config,
+        type: alertType,
+        buildContent: (conf) => render(conf, body),
+        buildQuoteContent: (conf) => render(conf, data),
+      );
+    }
+
     return blockQuoteSpan(
       context,
       config,
-      buildContent:
-          (conf) => conf.getRich(
-            TextSpan(
-              children: MarkdownComponent.generate(context, data, conf, true),
-            ),
-          ),
+      buildContent: (conf) => render(conf, data),
     );
   }
 }

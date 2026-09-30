@@ -21,6 +21,7 @@ export 'package:gpt_markdown/streaming/block_entrance.dart';
 export 'package:gpt_markdown/streaming/stream_split.dart';
 
 // Per-component appearance.
+export 'package:gpt_markdown/styles/alert_style.dart';
 export 'package:gpt_markdown/styles/block_quote_style.dart';
 export 'package:gpt_markdown/styles/heading_style.dart';
 export 'package:gpt_markdown/styles/link_style.dart';
@@ -58,6 +59,7 @@ import 'streaming/reveal_effect.dart';
 import 'streaming/reveal_engine.dart';
 import 'streaming/reveal_spans.dart';
 import 'streaming/streaming_markdown.dart';
+import 'styles/alert_style.dart';
 import 'styles/block_quote_style.dart';
 import 'styles/heading_style.dart';
 import 'styles/link_style.dart';
@@ -131,6 +133,7 @@ class GptMarkdown extends StatelessWidget {
     this.inlineCodeStyle,
     this.styleSheet,
     this.blockQuoteBuilder,
+    this.alertBuilder,
     this.headingBuilder,
     this.checkboxBuilder,
     this.radioOptionBuilder,
@@ -459,6 +462,19 @@ class GptMarkdown extends StatelessWidget {
   /// text style without giving up the default structure.
   final BlockQuoteBuilder? blockQuoteBuilder;
 
+  /// Replaces the whole alert widget — a quote that opens with `[!NOTE]`,
+  /// `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]`.
+  ///
+  /// Reach for [styleSheet]'s [AlertStyle] first — it covers colours, icons,
+  /// titles and spacing, per type. The builder receives [AlertBuildDetails],
+  /// whose `defaultAlert()` and `asBlockQuote()` return the stock alert and
+  /// the plain quote.
+  ///
+  /// When this is null and [blockQuoteBuilder] is set, alerts are drawn by
+  /// [blockQuoteBuilder] as ordinary quotes, so an app that customised its
+  /// quotes keeps its look.
+  final AlertBuilder? alertBuilder;
+
   /// Whether bare URLs, `www.` hosts, email addresses and `<...>` autolinks
   /// become links. Defaults to true.
   ///
@@ -629,6 +645,7 @@ class GptMarkdown extends StatelessWidget {
       inlineCodeStyle: inlineCodeStyle,
       styleSheet: styleSheet,
       blockQuoteBuilder: blockQuoteBuilder,
+      alertBuilder: alertBuilder,
       headingBuilder: headingBuilder,
       checkboxBuilder: checkboxBuilder,
       radioOptionBuilder: radioOptionBuilder,

@@ -97,6 +97,7 @@ Builders replace structure. All are optional:
 |---|---|
 | `headingBuilder` | A heading and its optional divider |
 | `blockQuoteBuilder` | A block quote |
+| `alertBuilder` | An alert (`> [!NOTE]` and the other markers) |
 | `checkboxBuilder` | A task-list row |
 | `radioOptionBuilder` | A radio-option row |
 | `hrBuilder` | A horizontal rule |

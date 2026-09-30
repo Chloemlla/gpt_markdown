@@ -65,8 +65,67 @@ class MdParagraph extends MdNode {
 }
 
 class MdBlockQuote extends MdNode {
-  const MdBlockQuote({required this.children});
+  const MdBlockQuote({required this.children, this.alert});
 
+  /// The quote's content, exactly as written — for an alert, the `[!TYPE]`
+  /// marker line included. A walker that does not know about alerts sees an
+  /// ordinary quote.
+  final List<MdNode> children;
+
+  /// Set when the quote opens with an alert marker such as `[!NOTE]`.
+  final MdAlert? alert;
+}
+
+/// The kind of an alert, from the marker on the first line of a quote:
+///
+/// ```markdown
+/// > [!WARNING]
+/// > Back up your data first.
+/// ```
+enum MarkdownAlertType {
+  /// `[!NOTE]` — information worth noticing even when skimming.
+  note,
+
+  /// `[!TIP]` — optional advice for doing something better.
+  tip,
+
+  /// `[!IMPORTANT]` — information needed to succeed.
+  important,
+
+  /// `[!WARNING]` — something that needs attention straight away.
+  warning,
+
+  /// `[!CAUTION]` — the risks or negative outcomes of an action.
+  caution;
+
+  static final RegExp _marker = RegExp(
+    r'^\s*\[!(note|tip|important|warning|caution)\]\s*$',
+    caseSensitive: false,
+  );
+
+  /// The type [line] marks, or null when it is not exactly one marker.
+  ///
+  /// Case-insensitive, and surrounding whitespace is ignored. Anything else on
+  /// the line — or an unknown name such as `[!FOO]` — is not a marker, and the
+  /// quote stays an ordinary quote.
+  static MarkdownAlertType? fromMarker(String line) {
+    final match = _marker.firstMatch(line);
+    if (match == null) {
+      return null;
+    }
+    return MarkdownAlertType.values.byName(match.group(1)!.toLowerCase());
+  }
+}
+
+/// The alert a [MdBlockQuote] carries. Not an [MdNode]: it rides on the quote,
+/// so the node hierarchy — and every exhaustive `switch` over it — is
+/// unchanged.
+class MdAlert {
+  const MdAlert({required this.type, required this.children});
+
+  final MarkdownAlertType type;
+
+  /// The body, without the marker line.
   final List<MdNode> children;
 }
 
