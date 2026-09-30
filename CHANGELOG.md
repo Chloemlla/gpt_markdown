@@ -1,3 +1,11 @@
+## Unreleased
+
+### Fixed
+
+* Custom `inlineComponents` / `components` whose regex uses `unicode: true`
+  (for example `\p{L}`) now match. The flag was dropped when the patterns were
+  combined, so such components silently matched nothing (#114).
+
 ## 1.3.0
 
 Our biggest release yet.

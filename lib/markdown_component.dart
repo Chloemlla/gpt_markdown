@@ -114,12 +114,13 @@ abstract class MarkdownComponent {
     SourceTag(),
   ];
 
-  /// Compiled combined regexes, keyed by the joined pattern string.
+  /// Compiled combined patterns, keyed by the joined pattern string.
   ///
   /// Building and compiling the combined pattern is the most expensive part of
   /// [generate], and [generate] recurses once per nested span. The joined
-  /// pattern string fully determines the [RegExp], so it is the natural key.
-  static final Map<String, RegExp> _combinedRegexCache = {};
+  /// pattern string, plus the flags that vary, fully determines the pattern,
+  /// so it is the natural key.
+  static final Map<String, Pattern> _combinedRegexCache = {};
 
   /// Upper bound on [_combinedRegexCache].
   ///
@@ -127,7 +128,8 @@ abstract class MarkdownComponent {
   /// palette), so the set of distinct patterns is not bounded by the package.
   /// The cache is dropped wholesale rather than grown without limit.
   static const int _combinedRegexCacheLimit = 64;
-  static final Map<(String, bool, bool, bool), RegExp> _anchoredRegexCache = {};
+  static final Map<(String, bool, bool, bool, bool), RegExp>
+  _anchoredRegexCache = {};
 
   static RegExp _anchoredRegexFor(RegExp expression) {
     final key = (
@@ -135,6 +137,7 @@ abstract class MarkdownComponent {
       expression.isMultiLine,
       expression.isDotAll,
       expression.isCaseSensitive,
+      expression.isUnicode,
     );
     final cached = _anchoredRegexCache[key];
     if (cached != null) return cached;
@@ -146,16 +149,35 @@ abstract class MarkdownComponent {
       multiLine: expression.isMultiLine,
       dotAll: expression.isDotAll,
       caseSensitive: expression.isCaseSensitive,
+      unicode: expression.isUnicode,
     );
   }
 
-  static RegExp _combinedRegexFor(List<MarkdownComponent> components) {
-    final pattern = components.map<String>((e) => e.exp.pattern).join("|");
+  static Pattern _combinedRegexFor(List<MarkdownComponent> components) {
     // The combined regex carries one set of flags for every alternative, so a
     // single case-insensitive component makes the whole alternation
     // case-insensitive. Without this its matches never reach the dispatch loop
     // at all — the combined regex simply does not find them.
     final caseSensitive = components.every((e) => e.exp.isCaseSensitive);
+    // Unicode mode cannot be shared the same way: it rejects identity escapes
+    // such as `\~` and `\!` that the built-in patterns use, so compiling the
+    // alternation with `unicode: true` throws. Compiled without it, `\p{L}` in
+    // a consumer pattern means a literal `p{L}` and matches nothing (#114).
+    if (components.any((e) => e.exp.isUnicode)) {
+      final key =
+          'u:${caseSensitive ? '' : 'i'}:'
+          '${components.map((e) => '${e.exp.isUnicode ? 1 : 0}${e.exp.pattern}').join('\u0000')}';
+      final cached = _combinedRegexCache[key];
+      if (cached != null) return cached;
+      if (_combinedRegexCache.length >= _combinedRegexCacheLimit) {
+        _combinedRegexCache.clear();
+      }
+      return _combinedRegexCache[key] = _MixedFlagAlternation(
+        components.map((e) => e.exp).toList(growable: false),
+        caseSensitive: caseSensitive,
+      );
+    }
+    final pattern = components.map<String>((e) => e.exp.pattern).join("|");
     final key = caseSensitive ? pattern : 'i:$pattern';
     final cached = _combinedRegexCache[key];
     if (cached != null) {
@@ -257,6 +279,93 @@ abstract class MarkdownComponent {
 
   RegExp get exp;
   bool get inline;
+}
+
+/// The combined pattern of [MarkdownComponent.generate] when some components
+/// are unicode and some are not.
+///
+/// One [RegExp] cannot hold both, so this reproduces the alternation instead
+/// of compiling it: a match starts at the leftmost position any component
+/// matches, and there the first component in list order that matches wins —
+/// exactly what `a|b|c` does. Every pattern gets the flags the combined regex
+/// would have given it, except that each keeps its own unicode mode.
+class _MixedFlagAlternation implements Pattern {
+  _MixedFlagAlternation(List<RegExp> expressions, {required bool caseSensitive})
+    : _alternatives = [
+        for (final e in expressions)
+          RegExp(
+            e.pattern,
+            multiLine: true,
+            dotAll: true,
+            caseSensitive: caseSensitive,
+            unicode: e.isUnicode,
+          ),
+      ],
+      _scanners = [
+        for (final unicode in [false, true])
+          if (expressions.any((e) => e.isUnicode == unicode))
+            RegExp(
+              expressions
+                  .where((e) => e.isUnicode == unicode)
+                  .map((e) => e.pattern)
+                  .join('|'),
+              multiLine: true,
+              dotAll: true,
+              caseSensitive: caseSensitive,
+              unicode: unicode,
+            ),
+      ];
+
+  /// One regex per component, in list order, for the match at a position.
+  final List<RegExp> _alternatives;
+
+  /// The unicode and non-unicode components joined per mode, to find where
+  /// the next match starts without trying every component at every offset.
+  final List<RegExp> _scanners;
+
+  @override
+  Iterable<Match> allMatches(String string, [int start = 0]) sync* {
+    // The next match of each scanner, kept until the search passes it so a
+    // scanner whose next hit is far ahead is not rescanned for every match of
+    // the other.
+    final next = List<Match?>.filled(_scanners.length, null);
+    final exhausted = List<bool>.filled(_scanners.length, false);
+    var index = start;
+    while (index <= string.length) {
+      int? at;
+      for (var i = 0; i < _scanners.length; i++) {
+        if (exhausted[i]) continue;
+        var match = next[i];
+        if (match == null || match.start < index) {
+          final found = _scanners[i].allMatches(string, index).iterator;
+          match = next[i] = found.moveNext() ? found.current : null;
+          if (match == null) {
+            exhausted[i] = true;
+            continue;
+          }
+        }
+        if (at == null || match.start < at) at = match.start;
+      }
+      if (at == null) return;
+      final match = matchAsPrefix(string, at);
+      if (match == null) {
+        // Unreachable: a scanner matched here, so one of its components does.
+        index = at + 1;
+        continue;
+      }
+      yield match;
+      index = match.end > match.start ? match.end : match.end + 1;
+    }
+  }
+
+  @override
+  Match? matchAsPrefix(String string, [int start = 0]) {
+    for (final alternative in _alternatives) {
+      final match = alternative.matchAsPrefix(string, start);
+      if (match != null) return match;
+    }
+    return null;
+  }
 }
 
 /// Inline component of the legacy regex pipeline.
