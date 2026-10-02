@@ -243,10 +243,9 @@ class _CodeFieldState extends State<CodeField> {
     final codeStyle = TextStyle(
       // A caller-supplied family is not looked up inside this package.
       fontFamily: family ?? 'JetBrainsMono',
-      package:
-          family == null
-              ? 'gpt_markdown_chloemlla'
-              : widget.style.fontFamilyPackage,
+      package: family == null
+          ? 'gpt_markdown_chloemlla'
+          : widget.style.fontFamilyPackage,
       fontSize: widget.style.fontSize,
       color: widget.style.textColor,
     );
