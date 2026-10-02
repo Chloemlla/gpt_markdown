@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/indent_widget.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// Alerts (#79): a quote whose first line is `[!NOTE]`, `[!TIP]`,
 /// `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]`.

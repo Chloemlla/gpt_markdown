@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// `TableStyle.overflow` (#93): a table wider than the screen scrolls by
 /// default, and wraps its cells to fit with [TableOverflow.wrap].

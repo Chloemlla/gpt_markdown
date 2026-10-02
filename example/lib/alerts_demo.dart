@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 import 'demo_theme.dart';
 

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// Issue #114. `MarkdownComponent.generate` joins every component's pattern
 /// into one combined regex and used to compile it without `unicode: true`, so

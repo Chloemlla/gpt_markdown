@@ -4,7 +4,7 @@ import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 import 'golden_comparator.dart';
 

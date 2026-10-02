@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// Declares two golden tests for [markdown] rendered by a default
 /// [GptMarkdown]: `defaults/<name>_light.png` and `defaults/<name>_dark.png`,

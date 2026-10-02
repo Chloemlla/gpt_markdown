@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_error_image.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// Issue #32: an image whose URL is a `data:` URL —
 /// `![](data:image/png;base64,...)` — went to `NetworkImage`, which cannot

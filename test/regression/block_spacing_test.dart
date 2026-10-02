@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use_from_same_package
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:gpt_markdown_chloemlla/gpt_markdown.dart';
+import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
 /// Issue #41: the gap between blocks was one empty line (1.15 × the font
 /// size) with no way to change it. `GptMarkdownStyleSheet.blockSpacing` sets
