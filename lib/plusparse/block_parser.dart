@@ -17,10 +17,9 @@ MdDocument parseDocument(
 ]) {
   // Two full rewrites of the source, for a character most sources do not
   // contain. Checking first is one scan that usually ends in none.
-  final normalized =
-      src.contains('\r')
-          ? src.replaceAll('\r\n', '\n').replaceAll('\r', '\n')
-          : src;
+  final normalized = src.contains('\r')
+      ? src.replaceAll('\r\n', '\n').replaceAll('\r', '\n')
+      : src;
   final lines = normalized.split('\n');
   return MdDocument(children: parseBlocks(lines, useDollar, registry));
 }
@@ -144,22 +143,18 @@ List<MdNode> parseBlocks(
         }
         i += 1;
       }
-      final alertType =
-          inner.isEmpty ? null : MarkdownAlertType.fromMarker(inner.first);
+      final alertType = inner.isEmpty
+          ? null
+          : MarkdownAlertType.fromMarker(inner.first);
       out.add(
         MdBlockQuote(
           children: parseBlocks(inner, useDollar, registry),
-          alert:
-              alertType == null
-                  ? null
-                  : MdAlert(
-                    type: alertType,
-                    children: parseBlocks(
-                      inner.sublist(1),
-                      useDollar,
-                      registry,
-                    ),
-                  ),
+          alert: alertType == null
+              ? null
+              : MdAlert(
+                  type: alertType,
+                  children: parseBlocks(inner.sublist(1), useDollar, registry),
+                ),
         ),
       );
       continue;
@@ -336,8 +331,9 @@ bool _startsBlock(String t) {
     // just a bracketed letter.
     final children = <MdNode>[];
     final task = latex == null ? checkboxMarker(split.content) : null;
-    final choice =
-        task == null && latex == null ? radioMarker(split.content) : null;
+    final choice = task == null && latex == null
+        ? radioMarker(split.content)
+        : null;
     if (latex != null) {
       children.add(MdBlockLatex(tex: latex.tex));
     } else if (task != null) {

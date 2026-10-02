@@ -198,10 +198,9 @@ class CustomTableColumnWidth extends TableColumnWidth {
 TableColumnWidth _defaultTableColumnWidth(
   TableOverflow? overflow,
   int columnCount,
-) =>
-    overflow == TableOverflow.wrap
-        ? _WrapTableColumnWidth(columnCount)
-        : const CustomTableColumnWidth();
+) => overflow == TableOverflow.wrap
+    ? _WrapTableColumnWidth(columnCount)
+    : const CustomTableColumnWidth();
 
 /// [CustomTableColumnWidth] with a minimum that keeps words whole, for
 /// [TableOverflow.wrap].
@@ -234,10 +233,9 @@ class _WrapTableColumnWidth extends TableColumnWidth {
 
   @override
   double minIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) {
-    final cap =
-        containerWidth.isFinite
-            ? containerWidth / max(columnCount, 1)
-            : double.infinity;
+    final cap = containerWidth.isFinite
+        ? containerWidth / max(columnCount, 1)
+        : double.infinity;
     double width = 0;
     for (final cell in cells) {
       width = max(width, cell.getMinIntrinsicWidth(double.infinity));

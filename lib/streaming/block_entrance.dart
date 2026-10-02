@@ -116,13 +116,12 @@ class _GptMarkdownBlockEntranceState extends State<GptMarkdownBlockEntrance>
         return ClipRect(
           child: AnimatedBuilder(
             animation: _eased,
-            builder:
-                (context, child) => Align(
-                  alignment: AlignmentDirectional.topStart,
-                  widthFactor: 1.0,
-                  heightFactor: _eased.value.clamp(0.0, 1.0),
-                  child: child,
-                ),
+            builder: (context, child) => Align(
+              alignment: AlignmentDirectional.topStart,
+              widthFactor: 1.0,
+              heightFactor: _eased.value.clamp(0.0, 1.0),
+              child: child,
+            ),
             child: faded,
           ),
         );
@@ -130,23 +129,21 @@ class _GptMarkdownBlockEntranceState extends State<GptMarkdownBlockEntrance>
       case GptMarkdownBlockAnimation.slideUp:
         return AnimatedBuilder(
           animation: _eased,
-          builder:
-              (context, child) => Transform.translate(
-                offset: Offset(0, _slideDistance * (1 - _eased.value)),
-                child: child,
-              ),
+          builder: (context, child) => Transform.translate(
+            offset: Offset(0, _slideDistance * (1 - _eased.value)),
+            child: child,
+          ),
           child: faded,
         );
 
       case GptMarkdownBlockAnimation.scaleIn:
         return AnimatedBuilder(
           animation: _eased,
-          builder:
-              (context, child) => Transform.scale(
-                scale: _scaleFrom + (1 - _scaleFrom) * _eased.value,
-                alignment: AlignmentDirectional.topStart,
-                child: child,
-              ),
+          builder: (context, child) => Transform.scale(
+            scale: _scaleFrom + (1 - _scaleFrom) * _eased.value,
+            alignment: AlignmentDirectional.topStart,
+            child: child,
+          ),
           child: faded,
         );
     }

@@ -193,13 +193,12 @@ void main() {
               inlinePatterns: [
                 InlinePattern(
                   pattern: RegExp(r'@\w+'),
-                  builder:
-                      (context, match, style) => TextSpan(
-                        text: match[0],
-                        style: style,
-                        onEnter: (_) => entered += 1,
-                        semanticsLabel: 'mention',
-                      ),
+                  builder: (context, match, style) => TextSpan(
+                    text: match[0],
+                    style: style,
+                    onEnter: (_) => entered += 1,
+                    semanticsLabel: 'mention',
+                  ),
                 ),
               ],
             ),
@@ -296,13 +295,12 @@ void main() {
     final plain = rich.text.toPlainText();
     final start = plain.indexOf('the docs');
     final renderObject = tester.renderObject<RenderParagraph>(findRich().first);
-    final box =
-        renderObject
-            .getBoxesForSelection(
-              TextSelection(baseOffset: start, extentOffset: start + 8),
-              boxHeightStyle: BoxHeightStyle.max,
-            )
-            .first;
+    final box = renderObject
+        .getBoxesForSelection(
+          TextSelection(baseOffset: start, extentOffset: start + 8),
+          boxHeightStyle: BoxHeightStyle.max,
+        )
+        .first;
     final origin = tester.getTopLeft(findRich().first);
 
     // Just inside the top of the line box — above the glyphs.
@@ -333,14 +331,12 @@ void main() {
                 InlinePattern(
                   pattern: RegExp(r'@\w+'),
                   scopes: MarkdownComponent.allScopes,
-                  builder:
-                      (context, match, style) => TextSpan(
-                        text: match[0],
-                        style: style,
-                        recognizer:
-                            TapGestureRecognizer()
-                              ..onTap = () => mentionTaps.add(match[0]!),
-                      ),
+                  builder: (context, match, style) => TextSpan(
+                    text: match[0],
+                    style: style,
+                    recognizer: TapGestureRecognizer()
+                      ..onTap = () => mentionTaps.add(match[0]!),
+                  ),
                 ),
               ],
               onLinkTap: (url, title) => linkTaps.add(url),
@@ -437,11 +433,10 @@ void main() {
     expect(tester.takeException(), isNull);
     await tester.pumpAndSettle(const Duration(seconds: 5));
 
-    final text =
-        tester
-            .widgetList<RichText>(findRich())
-            .map((r) => r.text.toPlainText())
-            .join();
+    final text = tester
+        .widgetList<RichText>(findRich())
+        .map((r) => r.text.toPlainText())
+        .join();
     expect(text, contains('A heading'));
     expect(text, contains('the docs'));
   });
@@ -461,15 +456,14 @@ void main() {
             width: 600,
             child: GptMarkdown(
               'see [the docs here](https://example.com/docs)',
-              inlineLinkBuilder:
-                  (link) => link.defaultSpan(
-                    children: <InlineSpan>[
-                      TextSpan(text: 'the ', style: link.style),
-                      // Decoration only — carries no callback.
-                      TappableTextSpan(text: 'docs', style: link.style),
-                      TextSpan(text: ' here', style: link.style),
-                    ],
-                  ),
+              inlineLinkBuilder: (link) => link.defaultSpan(
+                children: <InlineSpan>[
+                  TextSpan(text: 'the ', style: link.style),
+                  // Decoration only — carries no callback.
+                  TappableTextSpan(text: 'docs', style: link.style),
+                  TextSpan(text: ' here', style: link.style),
+                ],
+              ),
               onLinkTap: (url, title) => tapped.add(url),
             ),
           ),

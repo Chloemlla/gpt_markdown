@@ -169,10 +169,9 @@ void main() {
       String? body;
       const raw = r'@person {{payload}} **bold** $x$';
       final block = ':::warning\n$raw\n:::';
-      final source =
-          quoted
-              ? block.split('\n').map((line) => '> $line').join('\n')
-              : block;
+      final source = quoted
+          ? block.split('\n').map((line) => '> $line').join('\n')
+          : block;
       await tester.pumpWidget(
         MaterialApp(
           home: GptMarkdown(

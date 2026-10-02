@@ -239,18 +239,18 @@ void main() {
       final out = <String, double>{};
       for (final element
           in find.byWidgetPredicate((w) => w is RichText).evaluate()) {
-        final text =
-            (element.widget as RichText).text
-                .toPlainText(includePlaceholders: false)
-                .trim();
+        final text = (element.widget as RichText).text
+            .toPlainText(includePlaceholders: false)
+            .trim();
         // Short prefixes collide between blocks while a word is still being
         // revealed ("T" is both "# T" and "Third..."), so only settled text
         // is tracked.
         if (text.length < 8) {
           continue;
         }
-        out[text] =
-            (element.renderObject as RenderBox).localToGlobal(Offset.zero).dy;
+        out[text] = (element.renderObject as RenderBox)
+            .localToGlobal(Offset.zero)
+            .dy;
       }
       return out;
     }

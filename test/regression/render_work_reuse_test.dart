@@ -114,13 +114,9 @@ void main() {
     for (var i = 0; i < 10; i++) {
       await tester.pump(const Duration(milliseconds: 16));
     }
-    final root =
-        find
-            .descendant(
-              of: find.byType(GptMarkdown),
-              matching: find.byType(Column),
-            )
-            .first;
+    final root = find
+        .descendant(of: find.byType(GptMarkdown), matching: find.byType(Column))
+        .first;
     final before = tester.widget(root);
     await tester.pump(const Duration(milliseconds: 16));
     expect(identical(before, tester.widget(root)), isTrue);
@@ -137,15 +133,14 @@ void main() {
     // Found through the scroll views, not through `Scrollbar`: a table only
     // draws a bar on pointer platforms, and the ownership this guards is the
     // controller, which exists either way.
-    final views =
-        tester
-            .widgetList<SingleChildScrollView>(
-              find.ancestor(
-                of: find.byType(Table),
-                matching: find.byType(SingleChildScrollView),
-              ),
-            )
-            .toList();
+    final views = tester
+        .widgetList<SingleChildScrollView>(
+          find.ancestor(
+            of: find.byType(Table),
+            matching: find.byType(SingleChildScrollView),
+          ),
+        )
+        .toList();
     expect(views, hasLength(2));
     expect(identical(views[0].controller, views[1].controller), isFalse);
     expect(tester.takeException(), isNull);

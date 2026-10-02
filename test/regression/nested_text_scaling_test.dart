@@ -11,13 +11,12 @@ double glyphHeight(WidgetTester tester, String word) {
   );
   final paragraph = tester.renderObject<RenderParagraph>(finder.last);
   final start = paragraph.text.toPlainText().indexOf(word);
-  final box =
-      paragraph
-          .getBoxesForSelection(
-            TextSelection(baseOffset: start, extentOffset: start + word.length),
-          )
-          .first
-          .toRect();
+  final box = paragraph
+      .getBoxesForSelection(
+        TextSelection(baseOffset: start, extentOffset: start + word.length),
+      )
+      .first
+      .toRect();
   return MatrixUtils.transformRect(paragraph.getTransformTo(null), box).height;
 }
 
@@ -34,27 +33,22 @@ void main() {
           final patterns = [
             InlinePattern(
               pattern: RegExp(r'@chip'),
-              builder:
-                  (context, match, style) =>
-                      WidgetSpan(child: Text('custom', style: style)),
+              builder: (context, match, style) =>
+                  WidgetSpan(child: Text('custom', style: style)),
             ),
             InlinePattern(
               pattern: RegExp(r'@nested'),
-              builder:
-                  (context, match, style) => TextSpan(
-                    children: [
-                      WidgetSpan(child: Text('wrapped', style: style)),
-                    ],
-                  ),
+              builder: (context, match, style) => TextSpan(
+                children: [WidgetSpan(child: Text('wrapped', style: style))],
+              ),
             ),
           ];
           final directives = [
             InlineDirective(
               open: '{{',
               close: '}}',
-              builder:
-                  (context, payload, style) =>
-                      WidgetSpan(child: Text(payload, style: style)),
+              builder: (context, payload, style) =>
+                  WidgetSpan(child: Text(payload, style: style)),
             ),
           ];
           final scaler = explicit ? TextScaler.linear(scale) : null;
@@ -65,32 +59,31 @@ void main() {
                   textScaler: TextScaler.linear(explicit ? 1 : scale),
                 ),
                 child: Scaffold(
-                  body:
-                      mode == 'sliver'
-                          ? CustomScrollView(
-                            slivers: [
-                              SliverGptMarkdown(
-                                source,
-                                config: GptMarkdownConfig(
-                                  textScaler: scaler,
-                                  style: const TextStyle(fontSize: 16),
-                                  inlinePatterns: patterns,
-                                  inlineDirectives: directives,
-                                ),
-                              ),
-                            ],
-                          )
-                          : SingleChildScrollView(
-                            child: GptMarkdown(
+                  body: mode == 'sliver'
+                      ? CustomScrollView(
+                          slivers: [
+                            SliverGptMarkdown(
                               source,
-                              incremental: incremental,
-                              maxLines: mode == 'maxLines' ? 100 : null,
-                              style: const TextStyle(fontSize: 16),
-                              textScaler: scaler,
-                              inlinePatterns: patterns,
-                              inlineDirectives: directives,
+                              config: GptMarkdownConfig(
+                                textScaler: scaler,
+                                style: const TextStyle(fontSize: 16),
+                                inlinePatterns: patterns,
+                                inlineDirectives: directives,
+                              ),
                             ),
+                          ],
+                        )
+                      : SingleChildScrollView(
+                          child: GptMarkdown(
+                            source,
+                            incremental: incremental,
+                            maxLines: mode == 'maxLines' ? 100 : null,
+                            style: const TextStyle(fontSize: 16),
+                            textScaler: scaler,
+                            inlinePatterns: patterns,
+                            inlineDirectives: directives,
                           ),
+                        ),
                 ),
               ),
             ),

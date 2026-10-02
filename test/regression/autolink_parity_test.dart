@@ -652,9 +652,8 @@ void main() {
                 inlinePatterns: [
                   InlinePattern(
                     pattern: RegExp(r'^b$'),
-                    builder:
-                        (context, match, style) =>
-                            const TextSpan(text: 'CLAIMED'),
+                    builder: (context, match, style) =>
+                        const TextSpan(text: 'CLAIMED'),
                   ),
                 ],
               ),

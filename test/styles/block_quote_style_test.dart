@@ -198,9 +198,12 @@ void main() {
     testWidgets('the builder replaces the whole quote', (tester) async {
       await pump(
         tester,
-        builder:
-            (context, content, style) =>
-                Row(children: [const Text('CUSTOM'), Flexible(child: content)]),
+        builder: (context, content, style) => Row(
+          children: [
+            const Text('CUSTOM'),
+            Flexible(child: content),
+          ],
+        ),
       );
       expect(find.text('CUSTOM'), findsOneWidget);
       expect(find.byType(BlockQuoteWidget), findsNothing);

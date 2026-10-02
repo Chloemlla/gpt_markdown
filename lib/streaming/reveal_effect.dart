@@ -163,9 +163,8 @@ const double _minSigma = 0.05;
 /// dark text lifts toward mid-grey.
 Color _waveCrest(Color color) {
   final hsl = HSLColor.fromColor(color);
-  final lightness =
-      hsl.lightness > 0.5
-          ? (hsl.lightness - 0.35).clamp(0.0, 1.0)
-          : (hsl.lightness + 0.35).clamp(0.0, 1.0);
+  final lightness = hsl.lightness > 0.5
+      ? (hsl.lightness - 0.35).clamp(0.0, 1.0)
+      : (hsl.lightness + 0.35).clamp(0.0, 1.0);
   return hsl.withLightness(lightness).toColor();
 }

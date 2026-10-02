@@ -41,9 +41,8 @@ void main() {
   testWidgets('the legacy builder still renders its widget', (tester) async {
     await pump(
       tester,
-      sourceTagBuilder:
-          (context, content, textStyle) =>
-              Text('L$content', key: const Key('legacy')),
+      sourceTagBuilder: (context, content, textStyle) =>
+          Text('L$content', key: const Key('legacy')),
     );
 
     expect(find.byKey(const Key('legacy')), findsOneWidget);
@@ -71,9 +70,8 @@ void main() {
     final tapped = <String>[];
     await pump(
       tester,
-      sourceTagBuilder:
-          (context, content, textStyle) =>
-              Text('L$content', key: const Key('legacy')),
+      sourceTagBuilder: (context, content, textStyle) =>
+          Text('L$content', key: const Key('legacy')),
       onSourceTagTap: tapped.add,
     );
 
@@ -88,9 +86,8 @@ void main() {
   ) async {
     await pump(
       tester,
-      sourceTagBuilder:
-          (context, content, textStyle) =>
-              Text('L$content', key: const Key('legacy')),
+      sourceTagBuilder: (context, content, textStyle) =>
+          Text('L$content', key: const Key('legacy')),
       inlineSourceTagBuilder: (tag) => tag.defaultSpan(),
     );
 

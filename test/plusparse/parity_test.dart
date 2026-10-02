@@ -110,9 +110,8 @@ void main() {
           InlinePattern.prefixed(
             prefix: '#',
             knownNames: const ['general'],
-            builder:
-                (context, match, style) =>
-                    const WidgetSpan(child: Text('CHIP')),
+            builder: (context, match, style) =>
+                const WidgetSpan(child: Text('CHIP')),
           ),
         ],
       );
@@ -131,9 +130,8 @@ void main() {
           InlinePattern.prefixed(
             prefix: '#',
             knownNames: const ['general'],
-            builder:
-                (context, match, style) =>
-                    const WidgetSpan(child: Text('CHIP')),
+            builder: (context, match, style) =>
+                const WidgetSpan(child: Text('CHIP')),
           ),
         ],
       );
@@ -270,23 +268,20 @@ void main() {
       InlinePattern.prefixed(
         prefix: '#',
         knownNames: const ['general', 'design-review'],
-        builder:
-            (context, match, style) =>
-                WidgetSpan(child: Text('CH:${match.group(0)}')),
+        builder: (context, match, style) =>
+            WidgetSpan(child: Text('CH:${match.group(0)}')),
       ),
       InlinePattern.prefixed(
         prefix: '@',
         knownNames: const ['ada', 'grace'],
-        builder:
-            (context, match, style) =>
-                WidgetSpan(child: Text('MN:${match.group(0)}')),
+        builder: (context, match, style) =>
+            WidgetSpan(child: Text('MN:${match.group(0)}')),
       ),
       InlinePattern.delimited(
         open: ':',
         knownNames: const ['tada', 'fire'],
-        builder:
-            (context, match, style) =>
-                WidgetSpan(child: Text('EM:${match.namedGroup('name')}')),
+        builder: (context, match, style) =>
+            WidgetSpan(child: Text('EM:${match.namedGroup('name')}')),
       ),
     ];
 

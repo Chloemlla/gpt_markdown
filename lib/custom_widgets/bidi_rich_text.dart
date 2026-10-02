@@ -299,9 +299,8 @@ class RenderBidiParagraph extends RenderParagraph
       return null;
     }
 
-    final probe =
-        _probe ??= TextPainter(textDirection: textDirection)
-          ..textWidthBasis = textWidthBasis;
+    final probe = _probe ??= TextPainter(textDirection: textDirection)
+      ..textWidthBasis = textWidthBasis;
     probe
       ..text = text
       ..textAlign = textAlign
@@ -315,10 +314,9 @@ class RenderBidiParagraph extends RenderParagraph
       ..textHeightBehavior = textHeightBehavior
       ..setPlaceholderDimensions(dimensions);
     probe.layout(
-      maxWidth:
-          softWrap || overflow == TextOverflow.ellipsis
-              ? maxWidth
-              : double.infinity,
+      maxWidth: softWrap || overflow == TextOverflow.ellipsis
+          ? maxWidth
+          : double.infinity,
     );
 
     final boxes = probe.inlinePlaceholderBoxes;
@@ -607,50 +605,51 @@ class _BidiTextState extends State<BidiText> {
     // `TextSpan`'s constructor derives `SystemMouseCursors.click` from a
     // non-null recognizer, so handing the already-resolved `defer` back in
     // would suppress it.
-    final cursor =
-        span.mouseCursor == MouseCursor.defer ? null : span.mouseCursor;
+    final cursor = span.mouseCursor == MouseCursor.defer
+        ? null
+        : span.mouseCursor;
     final text = span.text;
     if (span is LinkTextSpan) {
       return text != null
           ? LinkTextSpan(
-            text: text,
-            url: span.url,
-            linkStyle: span.linkStyle,
-            onTap: span.onTap,
-            hoverStyle: span.hoverStyle,
-            style: style,
-            recognizer: recognizer,
-            mouseCursor: cursor,
-            semanticsLabel: span.semanticsLabel,
-          )
+              text: text,
+              url: span.url,
+              linkStyle: span.linkStyle,
+              onTap: span.onTap,
+              hoverStyle: span.hoverStyle,
+              style: style,
+              recognizer: recognizer,
+              mouseCursor: cursor,
+              semanticsLabel: span.semanticsLabel,
+            )
           : LinkTextSpan.wrapping(
-            children: children ?? const <InlineSpan>[],
-            url: span.url,
-            linkStyle: span.linkStyle,
-            onTap: span.onTap,
-            hoverStyle: span.hoverStyle,
-            style: style,
-            mouseCursor: cursor,
-          );
+              children: children ?? const <InlineSpan>[],
+              url: span.url,
+              linkStyle: span.linkStyle,
+              onTap: span.onTap,
+              hoverStyle: span.hoverStyle,
+              style: style,
+              mouseCursor: cursor,
+            );
     }
     if (span is TappableTextSpan) {
       return text != null
           ? TappableTextSpan(
-            text: text,
-            onTap: span.onTap,
-            hoverStyle: span.hoverStyle,
-            style: style,
-            recognizer: recognizer,
-            mouseCursor: cursor,
-            semanticsLabel: span.semanticsLabel,
-          )
+              text: text,
+              onTap: span.onTap,
+              hoverStyle: span.hoverStyle,
+              style: style,
+              recognizer: recognizer,
+              mouseCursor: cursor,
+              semanticsLabel: span.semanticsLabel,
+            )
           : TappableTextSpan.wrapping(
-            children: children ?? const <InlineSpan>[],
-            onTap: span.onTap,
-            hoverStyle: span.hoverStyle,
-            style: style,
-            mouseCursor: cursor,
-          );
+              children: children ?? const <InlineSpan>[],
+              onTap: span.onTap,
+              hoverStyle: span.hoverStyle,
+              style: style,
+              mouseCursor: cursor,
+            );
     }
     if (span is RevealableSpan) {
       // Carries the reveal's own rebuild hook. Downgrading it to a plain
@@ -666,18 +665,18 @@ class _BidiTextState extends State<BidiText> {
     if (span is CodeTextSpan) {
       return text != null
           ? CodeTextSpan(
-            text: text,
-            codeStyle: span.codeStyle,
-            style: style,
-            recognizer: recognizer,
-            mouseCursor: cursor,
-            semanticsLabel: span.semanticsLabel,
-          )
+              text: text,
+              codeStyle: span.codeStyle,
+              style: style,
+              recognizer: recognizer,
+              mouseCursor: cursor,
+              semanticsLabel: span.semanticsLabel,
+            )
           : CodeTextSpan.revealing(
-            children: children ?? const <InlineSpan>[],
-            codeStyle: span.codeStyle,
-            style: style,
-          );
+              children: children ?? const <InlineSpan>[],
+              codeStyle: span.codeStyle,
+              style: style,
+            );
     }
     return TextSpan(
       text: text,
@@ -725,13 +724,12 @@ class _BidiTextState extends State<BidiText> {
         offset += span.text?.length ?? 0;
 
         final children = span.children;
-        final newChildren =
-            children == null
-                ? null
-                : <InlineSpan>[
-                  for (final child in children)
-                    visit(child, effectiveOwner, effectiveStart),
-                ];
+        final newChildren = children == null
+            ? null
+            : <InlineSpan>[
+                for (final child in children)
+                  visit(child, effectiveOwner, effectiveStart),
+              ];
 
         final onTap = effectiveOwner?.onTap;
         var recognizer = span.recognizer;
@@ -743,15 +741,14 @@ class _BidiTextState extends State<BidiText> {
 
         final hoverStyle =
             effectiveOwner != null &&
-                    _hoveredRun != null &&
-                    effectiveStart == _hoveredRun!.$1 &&
-                    offset == _hoveredRun!.$2
-                ? effectiveOwner.hoverStyle
-                : null;
-        final style =
-            hoverStyle == null
-                ? span.style
-                : (span.style ?? const TextStyle()).merge(hoverStyle);
+                _hoveredRun != null &&
+                effectiveStart == _hoveredRun!.$1 &&
+                offset == _hoveredRun!.$2
+            ? effectiveOwner.hoverStyle
+            : null;
+        final style = hoverStyle == null
+            ? span.style
+            : (span.style ?? const TextStyle()).merge(hoverStyle);
 
         return _rebuild(
           span,
@@ -827,8 +824,9 @@ class _BidiTextState extends State<BidiText> {
     // paragraph, and the run under the pointer restyles its own subtree. The
     // old per-link `LinkButton` rebuilt a nested paragraph on every hover.
     return MouseRegion(
-      cursor:
-          _hoveredRun == null ? MouseCursor.defer : SystemMouseCursors.click,
+      cursor: _hoveredRun == null
+          ? MouseCursor.defer
+          : SystemMouseCursors.click,
       onHover: (event) => _updateHover(event.localPosition),
       onExit: (_) {
         if (_hoveredRun != null) {

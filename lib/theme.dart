@@ -83,11 +83,12 @@ class GptMarkdownThemeData extends ThemeExtension<GptMarkdownThemeData> {
       //
       // `highlightColor` used to be the whole of inline-code styling, so an app
       // that set it and nothing else keeps its colour as the chip fill.
-      inlineCode: (inlineCode ??
-              (highlightColor == null
-                  ? null
-                  : InlineCodeStyle(backgroundColor: highlightColor)))
-          ?.resolve(themeData.colorScheme),
+      inlineCode:
+          (inlineCode ??
+                  (highlightColor == null
+                      ? null
+                      : InlineCodeStyle(backgroundColor: highlightColor)))
+              ?.resolve(themeData.colorScheme),
       styleSheet: styleSheet,
     );
   }
@@ -249,8 +250,9 @@ class GptMarkdownThemeData extends ThemeExtension<GptMarkdownThemeData> {
       linkColor: Color.lerp(linkColor, other.linkColor, t) ?? linkColor,
       linkHoverColor:
           Color.lerp(linkHoverColor, other.linkHoverColor, t) ?? linkHoverColor,
-      autoAddDividerLineAfterH1:
-          t < 0.5 ? autoAddDividerLineAfterH1 : other.autoAddDividerLineAfterH1,
+      autoAddDividerLineAfterH1: t < 0.5
+          ? autoAddDividerLineAfterH1
+          : other.autoAddDividerLineAfterH1,
       inlineCode:
           InlineCodeStyle.lerp(inlineCode, other.inlineCode, t) ?? inlineCode,
       styleSheet:
@@ -272,8 +274,8 @@ class GptMarkdownTheme extends InheritedWidget {
   /// A method to get the `GptMarkdownThemeData` from the `BuildContext`.
   static GptMarkdownThemeData of(BuildContext context) {
     var theme = Theme.of(context);
-    final provider =
-        context.dependOnInheritedWidgetOfExactType<GptMarkdownTheme>();
+    final provider = context
+        .dependOnInheritedWidgetOfExactType<GptMarkdownTheme>();
     if (provider != null) {
       return provider.gptThemeData;
     }

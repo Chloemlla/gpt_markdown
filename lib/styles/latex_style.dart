@@ -93,8 +93,9 @@ class LatexStyle {
       padding: EdgeInsetsGeometry.lerp(a.padding, b.padding, t),
       backgroundColor: Color.lerp(a.backgroundColor, b.backgroundColor, t),
       borderRadius: Radius.lerp(a.borderRadius, b.borderRadius, t),
-      scrollBlockHorizontally:
-          t < 0.5 ? a.scrollBlockHorizontally : b.scrollBlockHorizontally,
+      scrollBlockHorizontally: t < 0.5
+          ? a.scrollBlockHorizontally
+          : b.scrollBlockHorizontally,
     );
   }
 

@@ -73,12 +73,11 @@ void main() {
           home: GptMarkdown(
             '| A |\n|---|\n| `wide` |',
             incremental: incremental,
-            inlineCodeBuilder:
-                (_, _, _, _) => WidgetSpan(
-                  child: LayoutBuilder(
-                    builder: (_, _) => const SizedBox(width: 180, height: 20),
-                  ),
-                ),
+            inlineCodeBuilder: (_, _, _, _) => WidgetSpan(
+              child: LayoutBuilder(
+                builder: (_, _) => const SizedBox(width: 180, height: 20),
+              ),
+            ),
           ),
         ),
       );
