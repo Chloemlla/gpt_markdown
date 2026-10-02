@@ -670,10 +670,10 @@ class GptMarkdown extends StatelessWidget {
       inlineDirectives,
       blockRegistry:
           components == null &&
-                  inlineComponents == null &&
-                  (incremental || _usesSpanReveal)
-              ? config.blockRegistry
-              : null,
+              inlineComponents == null &&
+              (incremental || _usesSpanReveal)
+          ? config.blockRegistry
+          : null,
     );
     final tex = normalized.text;
     final dollarsAreMath = normalized.dollarsAreMath;
@@ -771,10 +771,9 @@ class GptMarkdown extends StatelessWidget {
       return value;
     }
 
-    tex =
-        blockRegistry == null
-            ? rewrite(tex)
-            : _outsideCustomBlocks(tex, blockRegistry, rewrite);
+    tex = blockRegistry == null
+        ? rewrite(tex)
+        : _outsideCustomBlocks(tex, blockRegistry, rewrite);
   }
   // tex = _removeExtraLinesInsideBlockLatex(tex);
   return (text: tex, dollarsAreMath: dollarsAreMath);

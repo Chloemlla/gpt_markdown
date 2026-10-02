@@ -247,13 +247,13 @@ class InlineCodeStyle {
     final baseSize = base.fontSize;
     final factor = fontSizeFactor;
     return base.copyWith(
-      fontFamily:
-          family == null || package == null
-              ? family
-              : 'packages/$package/$family',
+      fontFamily: family == null || package == null
+          ? family
+          : 'packages/$package/$family',
       fontFamilyFallback: fontFamilyFallback,
-      fontSize:
-          baseSize == null || factor == null ? baseSize : baseSize * factor,
+      fontSize: baseSize == null || factor == null
+          ? baseSize
+          : baseSize * factor,
       fontWeight: fontWeight,
       color: color,
       // A stale background Paint from the caller's style would double-paint

@@ -30,10 +30,9 @@ Future<double> _height(
               child: GptMarkdown(
                 data,
                 incremental: path != _Path.document,
-                inlineComponents:
-                    path == _Path.legacy
-                        ? MarkdownComponent.inlineComponents
-                        : null,
+                inlineComponents: path == _Path.legacy
+                    ? MarkdownComponent.inlineComponents
+                    : null,
                 styleSheet: GptMarkdownStyleSheet(blockSpacing: spacing),
               ),
             ),

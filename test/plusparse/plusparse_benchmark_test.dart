@@ -34,12 +34,11 @@ import 'sample_documents.dart';
 ///
 /// A `WidgetSpan` contributes `U+FFFC` to `toPlainText`, and the two pipelines
 /// place different numbers of them, so they are stripped before comparing.
-String _visibleText(List<InlineSpan> spans) =>
-    TextSpan(children: spans)
-        .toPlainText(includeSemanticsLabels: false)
-        .replaceAll('\uFFFC', ' ')
-        .replaceAll(RegExp(r'\s+'), ' ')
-        .trim();
+String _visibleText(List<InlineSpan> spans) => TextSpan(children: spans)
+    .toPlainText(includeSemanticsLabels: false)
+    .replaceAll('\uFFFC', ' ')
+    .replaceAll(RegExp(r'\s+'), ' ')
+    .trim();
 
 /// Average microseconds per run of [action] over [iters] timed iterations.
 double _bench(void Function() action, {required int iters, int? warmup}) {

@@ -1,7 +1,11 @@
 import 'markdown_text_scaling.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:highlight/highlight.dart' show Node, highlight;
+import 'package:val_highlight/languages/all.dart';
+import 'package:val_highlight/themes/dark.dart';
+import 'package:val_highlight/themes/light.dart';
+import 'package:val_highlight_flutter/val_highlight_flutter.dart'
+    show CodeStyles, Highlighter, LanguageRegistry, documentSpans;
 
 import '../styles/code_block_style.dart';
 
@@ -66,166 +70,46 @@ class _CodeFieldState extends State<CodeField> {
   Brightness? _cachedBrightness;
   List<InlineSpan>? _cachedSpans;
 
-  static const _languageAliases = <String, String>{
-    'c#': 'cs',
-    'c++': 'cpp',
-    'csharp': 'cs',
-    'docker': 'dockerfile',
-    'golang': 'go',
-    'h': 'cpp',
-    'hpp': 'cpp',
-    'html': 'xml',
-    'js': 'javascript',
-    'jsx': 'javascript',
-    'kt': 'kotlin',
-    'md': 'markdown',
-    'objective-c': 'objectivec',
-    'objc': 'objectivec',
-    'py': 'python',
-    'py3': 'python',
-    'python3': 'python',
-    'rb': 'ruby',
-    'rs': 'rust',
-    'sh': 'bash',
-    'shell': 'bash',
-    'shellscript': 'bash',
-    'ts': 'typescript',
-    'tsx': 'typescript',
-    'yml': 'yaml',
-  };
+  /// Every built-in grammar, looked up by the fence's language tag. There is
+  /// no fallback: a tag with no grammar renders as plain text.
+  static final _languages = LanguageRegistry(allLanguages)
+    ..add(pythonLanguage, aliases: const ['python3'])
+    ..add(bashLanguage, aliases: const ['shellscript']);
 
-  static const _lightSyntaxColors = <String, Color>{
-    'comment': Color(0xFF6A737D),
-    'quote': Color(0xFF6A737D),
-    'keyword': Color(0xFFD73A49),
-    'selector-tag': Color(0xFF22863A),
-    'literal': Color(0xFF005CC5),
-    'number': Color(0xFF005CC5),
-    'string': Color(0xFF032F62),
-    'doctag': Color(0xFF032F62),
-    'title': Color(0xFF6F42C1),
-    'section': Color(0xFF005CC5),
-    'type': Color(0xFF6F42C1),
-    'name': Color(0xFF22863A),
-    'attribute': Color(0xFF6F42C1),
-    'attr': Color(0xFF005CC5),
-    'variable': Color(0xFFE36209),
-    'template-variable': Color(0xFFE36209),
-    'regexp': Color(0xFF032F62),
-    'link': Color(0xFF032F62),
-    'symbol': Color(0xFF005CC5),
-    'bullet': Color(0xFF735C0F),
-    'built_in': Color(0xFF005CC5),
-    'builtin-name': Color(0xFF005CC5),
-    'meta': Color(0xFF6A737D),
-    'deletion': Color(0xFFB31D28),
-    'addition': Color(0xFF22863A),
-    'character': Color(0xFF032F62),
-    'class': Color(0xFF6F42C1),
-    'code': Color(0xFF005CC5),
-    'constructor': Color(0xFF6F42C1),
-    'emphasis': Color(0xFF24292E),
-    'formula': Color(0xFF005CC5),
-    'function': Color(0xFF6F42C1),
-    'identifier': Color(0xFF24292E),
-    'meta-keyword': Color(0xFFD73A49),
-    'meta-string': Color(0xFF032F62),
-    'module': Color(0xFF6F42C1),
-    'module-access': Color(0xFF005CC5),
-    'module-def': Color(0xFF6F42C1),
-    'operator': Color(0xFFD73A49),
-    'params': Color(0xFFE36209),
-    'pattern-match': Color(0xFF22863A),
-    'rest_arg': Color(0xFFE36209),
-    'selector-attr': Color(0xFF005CC5),
-    'selector-class': Color(0xFF6F42C1),
-    'selector-id': Color(0xFF005CC5),
-    'selector-pseudo': Color(0xFFE36209),
-    'strong': Color(0xFF24292E),
-    'subst': Color(0xFFD73A49),
-    'tag': Color(0xFF22863A),
-    'template-tag': Color(0xFFD73A49),
-    'typing': Color(0xFF6F42C1),
-  };
-
-  static const _darkSyntaxColors = <String, Color>{
-    'comment': Color(0xFF8B949E),
-    'quote': Color(0xFF8B949E),
-    'keyword': Color(0xFFFF7B72),
-    'selector-tag': Color(0xFF7EE787),
-    'literal': Color(0xFF79C0FF),
-    'number': Color(0xFF79C0FF),
-    'string': Color(0xFFA5D6FF),
-    'doctag': Color(0xFFA5D6FF),
-    'title': Color(0xFFD2A8FF),
-    'section': Color(0xFF79C0FF),
-    'type': Color(0xFFD2A8FF),
-    'name': Color(0xFF7EE787),
-    'attribute': Color(0xFFD2A8FF),
-    'attr': Color(0xFF79C0FF),
-    'variable': Color(0xFFFFA657),
-    'template-variable': Color(0xFFFFA657),
-    'regexp': Color(0xFFA5D6FF),
-    'link': Color(0xFFA5D6FF),
-    'symbol': Color(0xFF79C0FF),
-    'bullet': Color(0xFFF2CC60),
-    'built_in': Color(0xFF79C0FF),
-    'builtin-name': Color(0xFF79C0FF),
-    'meta': Color(0xFF8B949E),
-    'deletion': Color(0xFFFF7B72),
-    'addition': Color(0xFF7EE787),
-    'character': Color(0xFFA5D6FF),
-    'class': Color(0xFFD2A8FF),
-    'code': Color(0xFF79C0FF),
-    'constructor': Color(0xFFD2A8FF),
-    'emphasis': Color(0xFFC9D1D9),
-    'formula': Color(0xFF79C0FF),
-    'function': Color(0xFFD2A8FF),
-    'identifier': Color(0xFFC9D1D9),
-    'meta-keyword': Color(0xFFFF7B72),
-    'meta-string': Color(0xFFA5D6FF),
-    'module': Color(0xFFD2A8FF),
-    'module-access': Color(0xFF79C0FF),
-    'module-def': Color(0xFFD2A8FF),
-    'operator': Color(0xFFFF7B72),
-    'params': Color(0xFFFFA657),
-    'pattern-match': Color(0xFF7EE787),
-    'rest_arg': Color(0xFFFFA657),
-    'selector-attr': Color(0xFF79C0FF),
-    'selector-class': Color(0xFFD2A8FF),
-    'selector-id': Color(0xFF79C0FF),
-    'selector-pseudo': Color(0xFFFFA657),
-    'strong': Color(0xFFC9D1D9),
-    'subst': Color(0xFFFF7B72),
-    'tag': Color(0xFF7EE787),
-    'template-tag': Color(0xFFFF7B72),
-    'typing': Color(0xFFD2A8FF),
-  };
+  /// Shares [_languages] so Markdown and HTML resolve embedded languages.
+  static final _highlighter = Highlighter(registry: _languages);
+  static final _lightStyles = CodeStyles(lightTheme);
+  static final _darkStyles = CodeStyles(darkTheme);
 
   List<InlineSpan> _highlightedCode(Brightness brightness) {
-    final requested =
-        widget.highlightCode ? widget.name.trim().toLowerCase() : '';
+    final requested = widget.highlightCode
+        ? widget.name.trim().toLowerCase()
+        : '';
     if (_cachedCode == widget.codes &&
         _cachedLanguage == requested &&
         _cachedBrightness == brightness) {
-      return _cachedSpans!;
+      var cachedSpans = _cachedSpans;
+      if (cachedSpans != null) {
+        return cachedSpans;
+      }
     }
 
     late final List<InlineSpan> spans;
-    if (requested.isEmpty) {
+    final language = requested.isEmpty ? null : _languages.lookup(requested);
+    if (language == null) {
       spans = <InlineSpan>[TextSpan(text: widget.codes)];
     } else {
-      final language = _languageAliases[requested] ?? requested;
       try {
-        final result = highlight.parse(widget.codes, language: language);
-        final colors =
-            brightness == Brightness.dark
-                ? _darkSyntaxColors
-                : _lightSyntaxColors;
-        spans = _spansForNodes(result.nodes ?? const <Node>[], colors);
+        final result = _highlighter.highlight(widget.codes, language: language);
+        // Plain text keeps a null style, so it inherits `CodeBlockStyle`'s
+        // text colour instead of the theme's root colour.
+        spans = documentSpans(
+          result,
+          brightness == Brightness.dark ? _darkStyles : _lightStyles,
+        );
       } catch (_) {
-        // Markdown language tags are free-form. An unknown tag must never stop
-        // the surrounding response from rendering.
+        // A grammar failure must never stop the surrounding response from
+        // rendering.
         spans = <InlineSpan>[TextSpan(text: widget.codes)];
       }
     }
@@ -235,30 +119,6 @@ class _CodeFieldState extends State<CodeField> {
     _cachedBrightness = brightness;
     _cachedSpans = spans;
     return spans;
-  }
-
-  List<InlineSpan> _spansForNodes(List<Node> nodes, Map<String, Color> colors) {
-    return nodes
-        .map((node) {
-          final children = node.children;
-          final color = node.className == null ? null : colors[node.className!];
-          final isStrong = node.className == 'strong';
-          final isEmphasis = node.className == 'emphasis';
-          return TextSpan(
-            text: node.value,
-            style:
-                color == null && !isStrong && !isEmphasis
-                    ? null
-                    : TextStyle(
-                      color: color,
-                      fontWeight: isStrong ? FontWeight.bold : null,
-                      fontStyle: isEmphasis ? FontStyle.italic : null,
-                    ),
-            children:
-                children == null ? null : _spansForNodes(children, colors),
-          );
-        })
-        .toList(growable: false);
   }
 
   /// The copy control.
@@ -285,10 +145,9 @@ class _CodeFieldState extends State<CodeField> {
   /// thing to reach for is fewer code blocks built at once, not a control that
   /// only half exists.
   Widget _copyButton(BuildContext context) {
-    final label =
-        _copied
-            ? (widget.style.copiedLabel ?? 'Copied!')
-            : (widget.style.copyLabel ?? 'Copy code');
+    final label = _copied
+        ? (widget.style.copiedLabel ?? 'Copied!')
+        : (widget.style.copyLabel ?? 'Copy code');
     final icon = _copied ? Icons.check_rounded : Icons.content_copy_rounded;
     final scheme = Theme.of(context).colorScheme;
 
@@ -335,9 +194,8 @@ class _CodeFieldState extends State<CodeField> {
               child: Center(
                 child: AnimatedSwitcher(
                   duration: const Duration(milliseconds: 160),
-                  transitionBuilder:
-                      (child, animation) =>
-                          ScaleTransition(scale: animation, child: child),
+                  transitionBuilder: (child, animation) =>
+                      ScaleTransition(scale: animation, child: child),
                   child: Icon(
                     icon,
                     key: ValueKey(_copied),
@@ -415,13 +273,12 @@ class _CodeFieldState extends State<CodeField> {
                 widget.style.backgroundColor ??
                 Theme.of(context).colorScheme.surfaceContainer,
             borderRadius: panelRadius,
-            border:
-                borderColor == null
-                    ? null
-                    : Border.all(
-                      color: borderColor,
-                      width: widget.style.borderWidth ?? 1,
-                    ),
+            border: borderColor == null
+                ? null
+                : Border.all(
+                    color: borderColor,
+                    width: widget.style.borderWidth ?? 1,
+                  ),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -440,10 +297,9 @@ class _CodeFieldState extends State<CodeField> {
                             alignment: AlignmentDirectional.centerStart,
                             child: DecoratedBox(
                               decoration: BoxDecoration(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.surfaceContainerHighest,
+                                color: Theme.of(
+                                  context,
+                                ).colorScheme.surfaceContainerHighest,
                                 borderRadius: BorderRadius.circular(7),
                               ),
                               child: Padding(
@@ -457,10 +313,9 @@ class _CodeFieldState extends State<CodeField> {
                                     Icon(
                                       Icons.terminal_rounded,
                                       size: 13,
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
+                                      color: Theme.of(
+                                        context,
+                                      ).colorScheme.onSurfaceVariant,
                                     ),
                                     const SizedBox(width: 5),
                                     Flexible(

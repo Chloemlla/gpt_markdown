@@ -147,8 +147,9 @@ void main() {
               body: GptMarkdown(
                 '| a | b |\n|---|---|\n| 1 | 2 |',
                 styleSheet: GptMarkdownStyleSheet(table: table),
-                inlineComponents:
-                    legacy ? MarkdownComponent.inlineComponents : null,
+                inlineComponents: legacy
+                    ? MarkdownComponent.inlineComponents
+                    : null,
               ),
             ),
           ),

@@ -96,9 +96,8 @@ void main() {
       await pump(
         tester,
         'run `code` now',
-        inlineCodeBuilder:
-            (context, code, style, codeStyle) =>
-                TextSpan(text: 'BUILT:$code', style: style),
+        inlineCodeBuilder: (context, code, style, codeStyle) =>
+            TextSpan(text: 'BUILT:$code', style: style),
       );
       expect(allSpans(tester).whereType<CodeTextSpan>(), isEmpty);
       expect(
@@ -113,12 +112,11 @@ void main() {
       await pump(
         tester,
         'run `code` now',
-        inlineCodeBuilder:
-            (context, code, style, codeStyle) => CodeTextSpan(
-              text: code.toUpperCase(),
-              codeStyle: codeStyle.copyWith(borderWidth: 0),
-              style: style,
-            ),
+        inlineCodeBuilder: (context, code, style, codeStyle) => CodeTextSpan(
+          text: code.toUpperCase(),
+          codeStyle: codeStyle.copyWith(borderWidth: 0),
+          style: style,
+        ),
       );
       final code = allSpans(tester).whereType<CodeTextSpan>().single;
       expect(code.text, 'CODE');
@@ -132,9 +130,8 @@ void main() {
       await pump(
         tester,
         'run `code` now',
-        inlineCodeBuilder:
-            (context, code, style, codeStyle) =>
-                baselineWidgetSpan(Text('W:$code', style: style)),
+        inlineCodeBuilder: (context, code, style, codeStyle) =>
+            baselineWidgetSpan(Text('W:$code', style: style)),
       );
       final span = allSpans(tester).whereType<WidgetSpan>().single;
       expect(span.alignment, PlaceholderAlignment.baseline);
@@ -260,8 +257,9 @@ void main() {
         inlineCodeStyle: const InlineCodeStyle(fontSizeFactor: 0.5),
       );
       final code = allSpans(tester).whereType<CodeTextSpan>().single;
-      final headingSize =
-          GptMarkdownThemeData(brightness: Brightness.light).h1?.fontSize;
+      final headingSize = GptMarkdownThemeData(
+        brightness: Brightness.light,
+      ).h1?.fontSize;
       expect(code.style?.fontSize, closeTo(headingSize! * 0.5, 0.01));
     });
   });

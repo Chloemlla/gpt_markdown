@@ -191,21 +191,20 @@ List<InlinePattern> _showcasePatterns(BuildContext context) {
     InlinePattern.prefixed(
       prefix: '#',
       knownNames: _channels,
-      builder:
-          (context, match, style) => _pill(
-            style: style,
-            background: colors.primary.withValues(alpha: 0.08),
-            border: colors.primary.withValues(alpha: 0.18),
-            children: [
-              Icon(
-                Icons.tag_rounded,
-                size: (style.fontSize ?? 14) * 0.95,
-                color: colors.primary,
-              ),
-              const SizedBox(width: 2),
-              _pillLabel(_withoutPrefix(match.group(0)), style, colors.primary),
-            ],
+      builder: (context, match, style) => _pill(
+        style: style,
+        background: colors.primary.withValues(alpha: 0.08),
+        border: colors.primary.withValues(alpha: 0.18),
+        children: [
+          Icon(
+            Icons.tag_rounded,
+            size: (style.fontSize ?? 14) * 0.95,
+            color: colors.primary,
           ),
+          const SizedBox(width: 2),
+          _pillLabel(_withoutPrefix(match.group(0)), style, colors.primary),
+        ],
+      ),
     ),
     InlinePattern.prefixed(
       prefix: '@',
@@ -250,16 +249,15 @@ List<InlinePattern> _showcasePatterns(BuildContext context) {
     // A TextSpan, so it stays selectable and wraps with the paragraph.
     InlinePattern(
       pattern: RegExp(r'(?<![\w-])GH-(\d+)\b'),
-      builder:
-          (context, match, style) => TextSpan(
-            text: match.group(0),
-            style: style.copyWith(
-              color: colors.primary,
-              fontWeight: FontWeight.w600,
-              fontFamily: 'JetBrainsMono',
-              fontSize: (style.fontSize ?? 14) * 0.9,
-            ),
-          ),
+      builder: (context, match, style) => TextSpan(
+        text: match.group(0),
+        style: style.copyWith(
+          color: colors.primary,
+          fontWeight: FontWeight.w600,
+          fontFamily: 'JetBrainsMono',
+          fontSize: (style.fontSize ?? 14) * 0.9,
+        ),
+      ),
     ),
   ];
 }
@@ -495,26 +493,25 @@ class _Card extends StatelessWidget {
           child: Theme(
             data: theme,
             child: Builder(
-              builder:
-                  (context) => Material(
-                    color: theme.colorScheme.surface,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const _TitleBar(),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
-                          child: GptMarkdown(
-                            markdown,
-                            inlinePatterns: _showcasePatterns(context),
-                            inlineDirectives: _showcaseDirectives(context),
-                            styleSheet: _styleSheet(theme.colorScheme),
-                          ),
-                        ),
-                      ],
+              builder: (context) => Material(
+                color: theme.colorScheme.surface,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const _TitleBar(),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(22, 16, 22, 22),
+                      child: GptMarkdown(
+                        markdown,
+                        inlinePatterns: _showcasePatterns(context),
+                        inlineDirectives: _showcaseDirectives(context),
+                        styleSheet: _styleSheet(theme.colorScheme),
+                      ),
                     ),
-                  ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),

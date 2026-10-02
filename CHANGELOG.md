@@ -19,6 +19,15 @@
   and wraps its cells instead of scrolling it sideways (#93). The default,
   `TableOverflow.scroll`, is the existing behaviour.
 
+### Changed
+
+* Code blocks are highlighted with
+  [`val_highlight_flutter`](https://pub.dev/packages/val_highlight_flutter)
+  instead of `highlight`: 55 languages, its `light` and `dark` themes, and a
+  faster engine. A fence tag with no grammar still renders as plain text.
+* The minimum SDK is now Dart 3.9 and Flutter 3.35, which `val_highlight`
+  requires.
+
 ### Fixed
 
 * Custom `inlineComponents` / `components` whose regex uses `unicode: true`

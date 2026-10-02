@@ -28,12 +28,11 @@ Widget _app(
               style: const TextStyle(fontSize: 10),
               useDollarSignsForLatex: true,
               textDirection: direction,
-              latexBuilder:
-                  (context, tex, style, inline) => SizedBox(
-                    key: ValueKey('tex:$tex'),
-                    width: _mathWidths[tex] ?? 50,
-                    height: 10,
-                  ),
+              latexBuilder: (context, tex, style, inline) => SizedBox(
+                key: ValueKey('tex:$tex'),
+                width: _mathWidths[tex] ?? 50,
+                height: 10,
+              ),
             ),
           ),
         ),

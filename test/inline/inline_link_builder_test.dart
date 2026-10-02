@@ -153,10 +153,9 @@ void main() {
     await pumpMarkdown(
       tester,
       'see [the docs](https://example.com/docs)',
-      inlineLinkBuilder:
-          (link) => link.defaultSpan(
-            style: link.style.copyWith(color: const Color(0xFF00FF00)),
-          ),
+      inlineLinkBuilder: (link) => link.defaultSpan(
+        style: link.style.copyWith(color: const Color(0xFF00FF00)),
+      ),
       onLinkTap: (url, title) => tapped.add(url),
     );
 
@@ -171,12 +170,11 @@ void main() {
     await pumpMarkdown(
       tester,
       'see [the docs](https://example.com/docs)',
-      inlineLinkBuilder:
-          (link) => TappableTextSpan(
-            text: link.label.toUpperCase(),
-            onTap: link.onTap,
-            style: link.style,
-          ),
+      inlineLinkBuilder: (link) => TappableTextSpan(
+        text: link.label.toUpperCase(),
+        onTap: link.onTap,
+        style: link.style,
+      ),
       onLinkTap: (url, title) => tapped.add(url),
     );
 

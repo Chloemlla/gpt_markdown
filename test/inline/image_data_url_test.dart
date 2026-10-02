@@ -28,8 +28,9 @@ Future<void> _pump(
         body: SingleChildScrollView(
           child: GptMarkdown(
             markdown,
-            inlineComponents:
-                legacy ? MarkdownComponent.inlineComponents : null,
+            inlineComponents: legacy
+                ? MarkdownComponent.inlineComponents
+                : null,
             imageBuilder: imageBuilder,
             onImageTap: onImageTap,
           ),

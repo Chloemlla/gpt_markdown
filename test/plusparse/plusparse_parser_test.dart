@@ -61,20 +61,19 @@ void main() {
     test('emphasis inline', () {
       final doc = p('**bold** *italic* ~~strike~~ `code` <u>under</u>');
       final para = doc.children[0] as MdParagraph;
-      final kinds =
-          para.children
-              .map(
-                (n) => switch (n) {
-                  MdBold() => 'bold',
-                  MdItalic() => 'italic',
-                  MdStrike() => 'strike',
-                  MdInlineCode() => 'code',
-                  MdUnderline() => 'under',
-                  _ => null,
-                },
-              )
-              .nonNulls
-              .toList();
+      final kinds = para.children
+          .map(
+            (n) => switch (n) {
+              MdBold() => 'bold',
+              MdItalic() => 'italic',
+              MdStrike() => 'strike',
+              MdInlineCode() => 'code',
+              MdUnderline() => 'under',
+              _ => null,
+            },
+          )
+          .nonNulls
+          .toList();
       expect(kinds, ['bold', 'italic', 'strike', 'code', 'under']);
     });
 

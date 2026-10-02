@@ -367,10 +367,9 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   /// scale itself rather than rely on a paragraph that is no longer there.
   /// Gated on [_clamped], because a line budget is the one case a block still
   /// has to stay inside a paragraph.
-  GptMarkdownConfig get _renderConfig =>
-      _clamped
-          ? widget.config
-          : widget.config.copyWith(blocksRenderDirectly: true);
+  GptMarkdownConfig get _renderConfig => _clamped
+      ? widget.config
+      : widget.config.copyWith(blocksRenderDirectly: true);
 
   /// Whether a line budget applies to this document.
   ///
@@ -699,14 +698,13 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   void _prepareDocument(BuildContext context) {
     if (_prepared) return;
     final patterns = widget.config.inlinePatterns;
-    final source =
-        patterns == null || patterns.isEmpty
-            ? widget.text
-            : maskInlinePatterns(
-              widget.text,
-              patterns,
-              blockRegistry: widget.config.blockRegistry,
-            );
+    final source = patterns == null || patterns.isEmpty
+        ? widget.text
+        : maskInlinePatterns(
+            widget.text,
+            patterns,
+            blockRegistry: widget.config.blockRegistry,
+          );
     // One segment when a line budget is in play — see [_clamped]. Splitting
     // is what makes an append cheap, but every segment becomes its own
     // paragraph and the budget is applied to each, so a two-line preview of a
@@ -714,16 +712,15 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
     // and no error. A clamped preview is a static excerpt rather than a
     // streaming reply, so it gives up incremental parsing to get its clamp
     // back.
-    _segments =
-        !_clamped
-            ? _visibleSegments(
+    _segments = !_clamped
+        ? _visibleSegments(
+            source,
+            _segmentCache.update(
               source,
-              _segmentCache.update(
-                source,
-                blockRegistry: widget.config.blockRegistry,
-              ),
-            )
-            : <String>[source];
+              blockRegistry: widget.config.blockRegistry,
+            ),
+          )
+        : <String>[source];
     final live = _segments.toSet();
     _documents.removeWhere((key, _) => !live.contains(key));
     bool removed((int, String) key) =>
@@ -738,10 +735,8 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
     var offset = 0;
     for (var index = 0; index < _segments.length; index++) {
       final spans = _spansFor(context, _segments[index], index);
-      final count =
-          _characterCounts[(index, _segments[index])] ??= countRevealCharacters(
-            spans,
-          );
+      final count = _characterCounts[(index, _segments[index])] ??=
+          countRevealCharacters(spans);
       _rendered.add(spans);
       _starts.add(offset);
       _counts.add(count);
@@ -820,9 +815,9 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
       children.add(
         revealing
             ? ValueListenableBuilder<int>(
-              valueListenable: _segmentFrames[i],
-              builder: (context, _, _) => _buildSegment(context, i),
-            )
+                valueListenable: _segmentFrames[i],
+                builder: (context, _, _) => _buildSegment(context, i),
+              )
             : _buildSegment(context, i),
       );
     }
@@ -882,8 +877,9 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
     }
     return Semantics(
       container: true,
-      label:
-          MediaQuery.accessibleNavigationOf(context) ? _semanticsLabel() : null,
+      label: MediaQuery.accessibleNavigationOf(context)
+          ? _semanticsLabel()
+          : null,
       child: ExcludeSemantics(child: column),
     );
   }
@@ -895,13 +891,9 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   String _semanticsLabel() {
     final buffer = StringBuffer();
     for (var index = 0; index < _segments.length; index++) {
-      final text =
-          _plainText[(index, _segments[index])] ??= TextSpan(
-            children: _rendered[index],
-          ).toPlainText(
-            includeSemanticsLabels: false,
-            includePlaceholders: false,
-          );
+      final text = _plainText[(index, _segments[index])] ??= TextSpan(
+        children: _rendered[index],
+      ).toPlainText(includeSemanticsLabels: false, includePlaceholders: false);
       if (text.trim().isEmpty) {
         continue;
       }

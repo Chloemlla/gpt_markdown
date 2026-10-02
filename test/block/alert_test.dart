@@ -62,11 +62,10 @@ Future<void> _pump(
   await tester.pumpAndSettle();
 }
 
-Color _barColor(WidgetTester tester, {int index = 0}) =>
-    tester
-        .widgetList<BlockQuoteWidget>(find.byType(BlockQuoteWidget))
-        .elementAt(index)
-        .color;
+Color _barColor(WidgetTester tester, {int index = 0}) => tester
+    .widgetList<BlockQuoteWidget>(find.byType(BlockQuoteWidget))
+    .elementAt(index)
+    .color;
 
 /// The alert's own clip: the package clips elsewhere too.
 Finder get _clips => find.byWidgetPredicate(

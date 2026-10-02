@@ -40,9 +40,9 @@ Widget checkboxWidget(
   required bool checked,
   required Widget label,
 }) {
-  final style = (resolvedStyleSheet(context, config).checkbox ??
-          const CheckboxStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final style =
+      (resolvedStyleSheet(context, config).checkbox ?? const CheckboxStyle())
+          .resolve(Theme.of(context).colorScheme);
   final builder = config.checkboxBuilder;
   if (builder != null) {
     return builder(context, checked, label, style);
@@ -66,9 +66,9 @@ Widget radioWidget(
   required bool selected,
   required Widget label,
 }) {
-  final style = (resolvedStyleSheet(context, config).checkbox ??
-          const CheckboxStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final style =
+      (resolvedStyleSheet(context, config).checkbox ?? const CheckboxStyle())
+          .resolve(Theme.of(context).colorScheme);
   final builder = config.radioOptionBuilder;
   if (builder != null) {
     return builder(context, selected, label, style);
@@ -101,18 +101,23 @@ Widget headingWidget(
   // ambient MediaQuery; inside one, the paragraph already did it.
   final ambient = config.blocksRenderDirectly;
   final theme = GptMarkdownTheme.of(context);
-  final headingStyle = (resolvedStyleSheet(context, config).heading ??
-          const HeadingStyle())
-      .resolve(Theme.of(context).colorScheme);
-  final levelStyle =
-      [theme.h1, theme.h2, theme.h3, theme.h4, theme.h5, theme.h6][level - 1];
+  final headingStyle =
+      (resolvedStyleSheet(context, config).heading ?? const HeadingStyle())
+          .resolve(Theme.of(context).colorScheme);
+  final levelStyle = [
+    theme.h1,
+    theme.h2,
+    theme.h3,
+    theme.h4,
+    theme.h5,
+    theme.h6,
+  ][level - 1];
   final override = headingStyle.textStyle;
   final conf = config.copyWith(
     scope: MarkdownScope.heading,
-    style:
-        override == null
-            ? levelStyle
-            : (levelStyle ?? const TextStyle()).merge(override),
+    style: override == null
+        ? levelStyle
+        : (levelStyle ?? const TextStyle()).merge(override),
   );
 
   final builder = config.headingBuilder;
@@ -141,10 +146,9 @@ Widget headingWidget(
             child: CustomDivider(
               height: headingStyle.dividerThickness ?? theme.hrLineThickness,
               color: headingStyle.dividerColor ?? theme.hrLineColor,
-              padding:
-                  dividerPadding is EdgeInsets
-                      ? dividerPadding
-                      : theme.hrLinePadding,
+              padding: dividerPadding is EdgeInsets
+                  ? dividerPadding
+                  : theme.hrLinePadding,
             ),
           ),
         ],
@@ -220,9 +224,10 @@ Widget _blockQuoteWidget(
   GptMarkdownConfig config, {
   required Widget Function(GptMarkdownConfig conf) buildContent,
 }) {
-  final style = (resolvedStyleSheet(context, config).blockQuote ??
-          const BlockQuoteStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final style =
+      (resolvedStyleSheet(context, config).blockQuote ??
+              const BlockQuoteStyle())
+          .resolve(Theme.of(context).colorScheme);
   final content = buildContent(_withTextStyle(config, style.textStyle));
 
   final builder = config.blockQuoteBuilder;
@@ -294,9 +299,8 @@ InlineSpan alertSpan(
     title: title,
     content: content,
     buildDefault: () => _defaultAlertWidget(details, config.textDirection),
-    buildQuote:
-        () =>
-            _blockQuoteWidget(context, config, buildContent: buildQuoteContent),
+    buildQuote: () =>
+        _blockQuoteWidget(context, config, buildContent: buildQuoteContent),
   );
   final builder = config.alertBuilder;
   return _blockSpanOf(
@@ -471,9 +475,9 @@ InlineSpan sourceTagSpan(
   String id,
   GptMarkdownConfig config,
 ) {
-  final tagStyle = (resolvedStyleSheet(context, config).sourceTag ??
-          const SourceTagStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final tagStyle =
+      (resolvedStyleSheet(context, config).sourceTag ?? const SourceTagStyle())
+          .resolve(Theme.of(context).colorScheme);
   final onSourceTagTap = config.onSourceTagTap;
   final onTap = onSourceTagTap == null ? null : () => onSourceTagTap(id);
 
@@ -530,10 +534,9 @@ InlineSpan defaultSourceTagSpan(SourceTagBuildDetails details) {
         color:
             style.backgroundColor ??
             Theme.of(details.context).colorScheme.onInverseSurface,
-        shape:
-            style.shape == BoxShape.rectangle
-                ? const RoundedRectangleBorder()
-                : const OvalBorder(),
+        shape: style.shape == BoxShape.rectangle
+            ? const RoundedRectangleBorder()
+            : const OvalBorder(),
         child: FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
@@ -556,9 +559,9 @@ Widget codeBlockWidget(
   required String code,
   required bool closed,
 }) {
-  final style = (resolvedStyleSheet(context, config).codeBlock ??
-          const CodeBlockStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final style =
+      (resolvedStyleSheet(context, config).codeBlock ?? const CodeBlockStyle())
+          .resolve(Theme.of(context).colorScheme);
   return config.codeBuilder?.call(context, name, code, closed) ??
       CodeField(
         scalesItsOwnText: config.blocksRenderDirectly,
@@ -674,10 +677,9 @@ Uint8List _dataUrlBytes(String url) {
   Uint8List bytes;
   try {
     final data = UriData.parse(url);
-    bytes =
-        data.mimeType.toLowerCase().startsWith('image/')
-            ? data.contentAsBytes()
-            : Uint8List(0);
+    bytes = data.mimeType.toLowerCase().startsWith('image/')
+        ? data.contentAsBytes()
+        : Uint8List(0);
   } on FormatException {
     bytes = Uint8List(0);
   }
@@ -707,9 +709,10 @@ InlineSpan imageSpan(
   // bytes are drawn, so it has to be in hand at construction time. It used to
   // be resolved below, purely for the border and padding, which is why `fit`,
   // `maxWidth` and `maxHeight` were settable and inert.
-  final imageStyle = (resolvedStyleSheet(context, config).image ??
-          const ImageStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final imageStyle =
+      (resolvedStyleSheet(context, config).image ?? const ImageStyle()).resolve(
+        Theme.of(context).colorScheme,
+      );
 
   final builder = config.imageBuilder;
   final Widget image;
@@ -727,10 +730,9 @@ InlineSpan imageSpan(
           }
           final total = loadingProgress.expectedTotalBytes;
           return CustomImageLoading(
-            progress:
-                total == null
-                    ? 1
-                    : loadingProgress.cumulativeBytesLoaded / total,
+            progress: total == null
+                ? 1
+                : loadingProgress.cumulativeBytesLoaded / total,
           );
         },
         fit: imageStyle.fit ?? BoxFit.fill,
@@ -791,68 +793,67 @@ Widget latexWidget(
   final workaround = config.latexWorkaround ?? (String tex) => tex;
   final builder =
       config.latexBuilder ??
-      (BuildContext context, String tex, TextStyle textStyle, bool inline) =>
-          SelectableAdapter(
-            selectedText: tex,
-            child: Math.tex(
-              tex,
-              textStyle: textStyle,
-              mathStyle: MathStyle.display,
-              textScaleFactor: 1,
-              settings: const TexParserSettings(strict: Strict.ignore),
-              options: MathOptions(
-                sizeUnderTextStyle: MathSize.large,
-                color:
-                    config.style?.color ??
-                    Theme.of(context).colorScheme.onSurface,
-                fontSize: MarkdownTextScaling.fontSize(
-                  context,
-                  textStyle.fontSize ??
-                      Theme.of(context).textTheme.bodyMedium?.fontSize ??
-                      14,
-                ),
-                mathFontOptions: FontOptions(
-                  fontFamily: "Main",
-                  fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                  fontShape: FontStyle.normal,
-                ),
-                textFontOptions: FontOptions(
-                  fontFamily: "Main",
-                  fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-                  fontShape: FontStyle.normal,
-                ),
-                style: MathStyle.display,
-              ),
-              onErrorFallback:
-                  (err) => Text(
-                    workaround(tex),
-                    textDirection: config.textDirection,
-                    style: textStyle.copyWith(
-                      color:
-                          (!kDebugMode)
-                              ? null
-                              : Theme.of(context).colorScheme.error,
-                    ),
-                  ),
+      (
+        BuildContext context,
+        String tex,
+        TextStyle textStyle,
+        bool inline,
+      ) => SelectableAdapter(
+        selectedText: tex,
+        child: Math.tex(
+          tex,
+          textStyle: textStyle,
+          mathStyle: MathStyle.display,
+          textScaleFactor: 1,
+          settings: const TexParserSettings(strict: Strict.ignore),
+          options: MathOptions(
+            sizeUnderTextStyle: MathSize.large,
+            color:
+                config.style?.color ?? Theme.of(context).colorScheme.onSurface,
+            fontSize: MarkdownTextScaling.fontSize(
+              context,
+              textStyle.fontSize ??
+                  Theme.of(context).textTheme.bodyMedium?.fontSize ??
+                  14,
             ),
-          );
+            mathFontOptions: FontOptions(
+              fontFamily: "Main",
+              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
+              fontShape: FontStyle.normal,
+            ),
+            textFontOptions: FontOptions(
+              fontFamily: "Main",
+              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
+              fontShape: FontStyle.normal,
+            ),
+            style: MathStyle.display,
+          ),
+          onErrorFallback: (err) => Text(
+            workaround(tex),
+            textDirection: config.textDirection,
+            style: textStyle.copyWith(
+              color: (!kDebugMode) ? null : Theme.of(context).colorScheme.error,
+            ),
+          ),
+        ),
+      );
 
-  final latexStyle = (resolvedStyleSheet(context, config).latex ??
-          const LatexStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final latexStyle =
+      (resolvedStyleSheet(context, config).latex ?? const LatexStyle()).resolve(
+        Theme.of(context).colorScheme,
+      );
   final override = latexStyle.textStyle;
   final base = config.style ?? const TextStyle();
   // Build below the boundary so custom builders and the math engine read the
   // effective scaler, including when this formula is nested inside a block.
   Widget maths = MarkdownTextScaling.wrap(
     Builder(
-      builder:
-          (mathContext) => builder(
-            mathContext,
-            workaround(tex),
-            override == null ? base : base.merge(override),
-            inline,
-          ),
+      builder: (mathContext) => builder(
+        mathContext,
+        workaround(tex),
+        override == null ? base : base.merge(override),
+        inline,
+      ),
     ),
     enabled: !inline && config.blocksRenderDirectly,
   );

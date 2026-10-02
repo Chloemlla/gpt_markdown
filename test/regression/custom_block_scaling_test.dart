@@ -11,8 +11,8 @@ void main() {
       final components = [
         MarkdownBlockComponent(
           syntax: const FencedBlockSyntax(type: 'note', opening: ':::note'),
-          builder:
-              (context, node, config) => Text(node.body, style: config.style),
+          builder: (context, node, config) =>
+              Text(node.body, style: config.style),
         ),
       ];
       Future<void> pump(double scale) => tester.pumpWidget(

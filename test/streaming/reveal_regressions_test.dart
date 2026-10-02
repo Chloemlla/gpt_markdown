@@ -388,7 +388,10 @@ void main() {
         children: [
           TextSpan(text: 'Run '),
           CodeTextSpan.revealing(
-            children: [TextSpan(text: 'npm '), TextSpan(text: 'install')],
+            children: [
+              TextSpan(text: 'npm '),
+              TextSpan(text: 'install'),
+            ],
             codeStyle: InlineCodeStyle(),
           ),
         ],

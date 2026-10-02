@@ -903,8 +903,9 @@ class GptMarkdownConfig {
     // `textScaler`. Descendant blocks inside this paragraph must switch
     // blocksRenderDirectly off: their placeholder already supplies scaling.
     final scaleFromAmbient = ambientScaling && !isRoot;
-    final effectiveScaler =
-        scaleFromAmbient ? null : (isRoot ? textScaler : TextScaler.noScaling);
+    final effectiveScaler = scaleFromAmbient
+        ? null
+        : (isRoot ? textScaler : TextScaler.noScaling);
     final codeRuns = collectInlineCodeRuns(span);
     // A tap target is resolved by the paragraph's render object, so a
     // paragraph holding one has to go through BidiText. Missing this renders

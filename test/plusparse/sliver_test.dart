@@ -78,8 +78,8 @@ void main() {
                 inlinePatterns: [
                   InlinePattern(
                     pattern: RegExp(r'@person'),
-                    builder:
-                        (_, _, _) => const TextSpan(text: 'matched mention'),
+                    builder: (_, _, _) =>
+                        const TextSpan(text: 'matched mention'),
                   ),
                 ],
               ),
