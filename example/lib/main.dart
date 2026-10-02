@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
+import 'alerts_demo.dart';
 import 'autolink_demo.dart';
 import 'demo_theme.dart';
 import 'inline_code_demo.dart';
@@ -84,6 +85,23 @@ A `|` inside math or a code span belongs to the cell, not to the table.
 - [x] Render Markdown
 - [x] Render LaTeX math
 - [ ] Ship your AI app
+
+## Alerts
+
+> [!NOTE]
+> Highlights information that users should take into account, even when skimming.
+
+> [!TIP]
+> Optional information to help a user be more successful.
+
+> [!IMPORTANT]
+> Crucial information necessary for users to succeed.
+
+> [!WARNING]
+> Critical content demanding immediate user attention due to potential risks.
+
+> [!CAUTION]
+> Negative potential consequences of an action.
 
 ## AI Output (Markdown + LaTeX + Code mixed)
 
@@ -265,6 +283,13 @@ class _ExamplePageState extends State<ExamplePage> {
             icon: const Icon(Icons.code_rounded),
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute<void>(builder: (_) => const InlineCodePage()),
+            ),
+          ),
+          IconButton(
+            tooltip: 'Alerts demo',
+            icon: const Icon(Icons.campaign_outlined),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const AlertsPage()),
             ),
           ),
           IconButton(

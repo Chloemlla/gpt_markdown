@@ -100,9 +100,11 @@ GptMarkdown(
 
 Fixed widths skip intrinsic column measurement. The default still sizes columns
 to content using its existing measurement behavior. This is necessary for custom
-cells containing LayoutBuilder, which cannot answer intrinsic-size queries. The
-built-in table scrolls horizontally and has unbounded horizontal
-constraints, so use fixed widths rather than flex widths there.
+cells containing LayoutBuilder, which cannot answer intrinsic-size queries. By
+default the built-in table scrolls horizontally and has unbounded horizontal
+constraints, so use fixed widths rather than flex widths there. With
+`TableStyle(overflow: TableOverflow.wrap)` the table is laid out against the
+available width instead, and flex widths work.
 
 Deferred highlighting displays all current code as plain monospace text while
 the fence is open and highlights when its closing fence arrives. An input that

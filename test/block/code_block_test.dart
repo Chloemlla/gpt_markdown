@@ -56,8 +56,9 @@ void main() {
       await pumpMarkdown(tester, '```dart\n$code\n```');
 
       final spans = descendantTextSpans(codeRichText(tester, code).text);
-      final tokenColors =
-          spans.map((span) => span.style?.color).whereType<Color>();
+      final tokenColors = spans
+          .map((span) => span.style?.color)
+          .whereType<Color>();
 
       expect(tokenColors.toSet().length, greaterThanOrEqualTo(2));
     });
@@ -72,8 +73,10 @@ def greet(name: str, count: int = 3):
       await pumpMarkdown(tester, '```python\n$code\n```');
 
       final spans = descendantTextSpans(codeRichText(tester, code).text);
-      final tokenColors =
-          spans.map((span) => span.style?.color).whereType<Color>().toSet();
+      final tokenColors = spans
+          .map((span) => span.style?.color)
+          .whereType<Color>()
+          .toSet();
 
       expect(tokenColors.length, greaterThanOrEqualTo(5));
     });

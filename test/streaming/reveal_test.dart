@@ -450,7 +450,10 @@ void main() {
       const spans = <InlineSpan>[
         TextSpan(
           text: 'ab',
-          children: [TextSpan(text: 'cd'), TextSpan(text: 'e')],
+          children: [
+            TextSpan(text: 'cd'),
+            TextSpan(text: 'e'),
+          ],
         ),
       ];
       expect(countRevealCharacters(spans), 5);
@@ -616,8 +619,9 @@ void main() {
           if (span is! TextSpan) {
             return;
           }
-          final style =
-              inherited == null ? span.style : inherited.merge(span.style);
+          final style = inherited == null
+              ? span.style
+              : inherited.merge(span.style);
           final family = (style?.fontFamily ?? '').toLowerCase();
           final text = span.text;
           if (text != null && text.isNotEmpty && family.contains('mono')) {

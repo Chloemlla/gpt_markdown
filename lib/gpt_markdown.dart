@@ -41,6 +41,7 @@ class GptMarkdown extends StatelessWidget {
     this.inlineCodeStyle,
     this.styleSheet,
     this.blockQuoteBuilder,
+    this.alertBuilder,
     this.headingBuilder,
     this.checkboxBuilder,
     this.radioOptionBuilder,
@@ -369,6 +370,19 @@ class GptMarkdown extends StatelessWidget {
   /// text style without giving up the default structure.
   final BlockQuoteBuilder? blockQuoteBuilder;
 
+  /// Replaces the whole alert widget — a quote that opens with `[!NOTE]`,
+  /// `[!TIP]`, `[!IMPORTANT]`, `[!WARNING]` or `[!CAUTION]`.
+  ///
+  /// Reach for [styleSheet]'s [AlertStyle] first — it covers colours, icons,
+  /// titles and spacing, per type. The builder receives [AlertBuildDetails],
+  /// whose `defaultAlert()` and `asBlockQuote()` return the stock alert and
+  /// the plain quote.
+  ///
+  /// When this is null and [blockQuoteBuilder] is set, alerts are drawn by
+  /// [blockQuoteBuilder] as ordinary quotes, so an app that customised its
+  /// quotes keeps its look.
+  final AlertBuilder? alertBuilder;
+
   /// Whether bare URLs, `www.` hosts, email addresses and `<...>` autolinks
   /// become links. Defaults to true.
   ///
@@ -499,7 +513,11 @@ class GptMarkdown extends StatelessWidget {
       // whole-document build creates it on its own.
       seamGap: blockGap(
         context,
-        GptMarkdownConfig(style: style, textScaler: textScaler),
+        GptMarkdownConfig(
+          style: style,
+          textScaler: textScaler,
+          styleSheet: styleSheet,
+        ),
       ),
       builder: _buildDocument,
     );
@@ -539,6 +557,7 @@ class GptMarkdown extends StatelessWidget {
       inlineCodeStyle: inlineCodeStyle,
       styleSheet: styleSheet,
       blockQuoteBuilder: blockQuoteBuilder,
+      alertBuilder: alertBuilder,
       headingBuilder: headingBuilder,
       checkboxBuilder: checkboxBuilder,
       radioOptionBuilder: radioOptionBuilder,
@@ -558,10 +577,10 @@ class GptMarkdown extends StatelessWidget {
       inlineDirectives,
       blockRegistry:
           components == null &&
-                  inlineComponents == null &&
-                  (incremental || _usesSpanReveal)
-              ? config.blockRegistry
-              : null,
+              inlineComponents == null &&
+              (incremental || _usesSpanReveal)
+          ? config.blockRegistry
+          : null,
     );
     final tex = normalized.text;
     final dollarsAreMath = normalized.dollarsAreMath;
@@ -659,10 +678,9 @@ class GptMarkdown extends StatelessWidget {
       return value;
     }
 
-    tex =
-        blockRegistry == null
-            ? rewrite(tex)
-            : _outsideCustomBlocks(tex, blockRegistry, rewrite);
+    tex = blockRegistry == null
+        ? rewrite(tex)
+        : _outsideCustomBlocks(tex, blockRegistry, rewrite);
   }
   // tex = _removeExtraLinesInsideBlockLatex(tex);
   return (text: tex, dollarsAreMath: dollarsAreMath);

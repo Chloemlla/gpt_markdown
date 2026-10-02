@@ -20,10 +20,9 @@ List<String> splitStreamSegments(
   String src, {
   MarkdownBlockRegistry? blockRegistry,
 }) {
-  final normalized =
-      src.contains('\r')
-          ? src.replaceAll('\r\n', '\n').replaceAll('\r', '\n')
-          : src;
+  final normalized = src.contains('\r')
+      ? src.replaceAll('\r\n', '\n').replaceAll('\r', '\n')
+      : src;
   final lines = normalized.split('\n');
   final segments = <String>[];
   final current = <String>[];

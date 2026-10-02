@@ -114,12 +114,13 @@ abstract class MarkdownComponent {
     SourceTag(),
   ];
 
-  /// Compiled combined regexes, keyed by the joined pattern string.
+  /// Compiled combined patterns, keyed by the joined pattern string.
   ///
   /// Building and compiling the combined pattern is the most expensive part of
   /// [generate], and [generate] recurses once per nested span. The joined
-  /// pattern string fully determines the [RegExp], so it is the natural key.
-  static final Map<String, RegExp> _combinedRegexCache = {};
+  /// pattern string, plus the flags that vary, fully determines the pattern,
+  /// so it is the natural key.
+  static final Map<String, Pattern> _combinedRegexCache = {};
 
   /// Upper bound on [_combinedRegexCache].
   ///
@@ -127,7 +128,8 @@ abstract class MarkdownComponent {
   /// palette), so the set of distinct patterns is not bounded by the package.
   /// The cache is dropped wholesale rather than grown without limit.
   static const int _combinedRegexCacheLimit = 64;
-  static final Map<(String, bool, bool, bool), RegExp> _anchoredRegexCache = {};
+  static final Map<(String, bool, bool, bool, bool), RegExp>
+  _anchoredRegexCache = {};
 
   static RegExp _anchoredRegexFor(RegExp expression) {
     final key = (
@@ -135,6 +137,7 @@ abstract class MarkdownComponent {
       expression.isMultiLine,
       expression.isDotAll,
       expression.isCaseSensitive,
+      expression.isUnicode,
     );
     final cached = _anchoredRegexCache[key];
     if (cached != null) return cached;
@@ -146,16 +149,35 @@ abstract class MarkdownComponent {
       multiLine: expression.isMultiLine,
       dotAll: expression.isDotAll,
       caseSensitive: expression.isCaseSensitive,
+      unicode: expression.isUnicode,
     );
   }
 
-  static RegExp _combinedRegexFor(List<MarkdownComponent> components) {
-    final pattern = components.map<String>((e) => e.exp.pattern).join("|");
+  static Pattern _combinedRegexFor(List<MarkdownComponent> components) {
     // The combined regex carries one set of flags for every alternative, so a
     // single case-insensitive component makes the whole alternation
     // case-insensitive. Without this its matches never reach the dispatch loop
     // at all — the combined regex simply does not find them.
     final caseSensitive = components.every((e) => e.exp.isCaseSensitive);
+    // Unicode mode cannot be shared the same way: it rejects identity escapes
+    // such as `\~` and `\!` that the built-in patterns use, so compiling the
+    // alternation with `unicode: true` throws. Compiled without it, `\p{L}` in
+    // a consumer pattern means a literal `p{L}` and matches nothing (#114).
+    if (components.any((e) => e.exp.isUnicode)) {
+      final key =
+          'u:${caseSensitive ? '' : 'i'}:'
+          '${components.map((e) => '${e.exp.isUnicode ? 1 : 0}${e.exp.pattern}').join('\u0000')}';
+      final cached = _combinedRegexCache[key];
+      if (cached != null) return cached;
+      if (_combinedRegexCache.length >= _combinedRegexCacheLimit) {
+        _combinedRegexCache.clear();
+      }
+      return _combinedRegexCache[key] = _MixedFlagAlternation(
+        components.map((e) => e.exp).toList(growable: false),
+        caseSensitive: caseSensitive,
+      );
+    }
+    final pattern = components.map<String>((e) => e.exp.pattern).join("|");
     final key = caseSensitive ? pattern : 'i:$pattern';
     final cached = _combinedRegexCache[key];
     if (cached != null) {
@@ -179,10 +201,9 @@ abstract class MarkdownComponent {
     final GptMarkdownConfig config,
     bool includeGlobalComponents,
   ) {
-    var components =
-        includeGlobalComponents
-            ? config.components ?? MarkdownComponent.globalComponents
-            : config.inlineComponents ?? MarkdownComponent.inlineComponents;
+    var components = includeGlobalComponents
+        ? config.components ?? MarkdownComponent.globalComponents
+        : config.inlineComponents ?? MarkdownComponent.inlineComponents;
 
     // Consumer patterns are matched ahead of the built-ins, and only in the
     // inline pass. The global pass resolves block structure (headings, lists,
@@ -257,6 +278,93 @@ abstract class MarkdownComponent {
 
   RegExp get exp;
   bool get inline;
+}
+
+/// The combined pattern of [MarkdownComponent.generate] when some components
+/// are unicode and some are not.
+///
+/// One [RegExp] cannot hold both, so this reproduces the alternation instead
+/// of compiling it: a match starts at the leftmost position any component
+/// matches, and there the first component in list order that matches wins —
+/// exactly what `a|b|c` does. Every pattern gets the flags the combined regex
+/// would have given it, except that each keeps its own unicode mode.
+class _MixedFlagAlternation implements Pattern {
+  _MixedFlagAlternation(List<RegExp> expressions, {required bool caseSensitive})
+    : _alternatives = [
+        for (final e in expressions)
+          RegExp(
+            e.pattern,
+            multiLine: true,
+            dotAll: true,
+            caseSensitive: caseSensitive,
+            unicode: e.isUnicode,
+          ),
+      ],
+      _scanners = [
+        for (final unicode in [false, true])
+          if (expressions.any((e) => e.isUnicode == unicode))
+            RegExp(
+              expressions
+                  .where((e) => e.isUnicode == unicode)
+                  .map((e) => e.pattern)
+                  .join('|'),
+              multiLine: true,
+              dotAll: true,
+              caseSensitive: caseSensitive,
+              unicode: unicode,
+            ),
+      ];
+
+  /// One regex per component, in list order, for the match at a position.
+  final List<RegExp> _alternatives;
+
+  /// The unicode and non-unicode components joined per mode, to find where
+  /// the next match starts without trying every component at every offset.
+  final List<RegExp> _scanners;
+
+  @override
+  Iterable<Match> allMatches(String string, [int start = 0]) sync* {
+    // The next match of each scanner, kept until the search passes it so a
+    // scanner whose next hit is far ahead is not rescanned for every match of
+    // the other.
+    final next = List<Match?>.filled(_scanners.length, null);
+    final exhausted = List<bool>.filled(_scanners.length, false);
+    var index = start;
+    while (index <= string.length) {
+      int? at;
+      for (var i = 0; i < _scanners.length; i++) {
+        if (exhausted[i]) continue;
+        var match = next[i];
+        if (match == null || match.start < index) {
+          final found = _scanners[i].allMatches(string, index).iterator;
+          match = next[i] = found.moveNext() ? found.current : null;
+          if (match == null) {
+            exhausted[i] = true;
+            continue;
+          }
+        }
+        if (at == null || match.start < at) at = match.start;
+      }
+      if (at == null) return;
+      final match = matchAsPrefix(string, at);
+      if (match == null) {
+        // Unreachable: a scanner matched here, so one of its components does.
+        index = at + 1;
+        continue;
+      }
+      yield match;
+      index = match.end > match.start ? match.end : match.end + 1;
+    }
+  }
+
+  @override
+  Match? matchAsPrefix(String string, [int start = 0]) {
+    for (final alternative in _alternatives) {
+      final match = alternative.matchAsPrefix(string, start);
+      if (match != null) return match;
+    }
+    return null;
+  }
 }
 
 /// Inline component of the legacy regex pipeline.
@@ -354,10 +462,9 @@ class InlineDirectiveMd extends InlineMd {
   ) {
     final directives = config.inlineDirectives;
     final match = exp.firstMatch(text.trim());
-    final decoded =
-        match == null || directives == null
-            ? null
-            : decodeInlineDirectiveMask(match[0]!, directives.length);
+    final decoded = match == null || directives == null
+        ? null
+        : decodeInlineDirectiveMask(match[0]!, directives.length);
     if (decoded == null || directives == null) {
       // A sentinel that is not one of this document's directives renders as
       // the text it is, rather than being mistaken for a widget.
@@ -547,13 +654,12 @@ class HTag extends BlockMd {
       context,
       config,
       level: hashes == null ? 1 : hashes.length,
-      buildChildren:
-          (conf) => MarkdownComponent.generate(
-            context,
-            "${match?.namedGroup('data')}",
-            conf,
-            false,
-          ),
+      buildChildren: (conf) => MarkdownComponent.generate(
+        context,
+        "${match?.namedGroup('data')}",
+        conf,
+        false,
+      ),
     );
   }
 }
@@ -575,14 +681,7 @@ class NewLines extends InlineMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    return TextSpan(
-      text: "\n\n",
-      style: TextStyle(
-        fontSize: config.style?.fontSize ?? 14,
-        height: 1.15,
-        color: config.style?.color,
-      ),
-    );
+    return paragraphBreakSpan(context, config);
   }
 }
 
@@ -704,15 +803,31 @@ class BlockQuote extends InlineMd {
     }
     var data = dataBuilder.toString().trim();
 
+    Widget render(GptMarkdownConfig conf, String source) => conf.getRich(
+      TextSpan(
+        children: MarkdownComponent.generate(context, source, conf, true),
+      ),
+    );
+
+    final newline = data.indexOf('\n');
+    final alertType = MarkdownAlertType.fromMarker(
+      newline == -1 ? data : data.substring(0, newline),
+    );
+    if (alertType != null && _rendersAlerts(config)) {
+      final body = newline == -1 ? '' : data.substring(newline + 1).trim();
+      return alertSpan(
+        context,
+        config,
+        type: alertType,
+        buildContent: (conf) => render(conf, body),
+        buildQuoteContent: (conf) => render(conf, data),
+      );
+    }
+
     return blockQuoteSpan(
       context,
       config,
-      buildContent:
-          (conf) => conf.getRich(
-            TextSpan(
-              children: MarkdownComponent.generate(context, data, conf, true),
-            ),
-          ),
+      buildContent: (conf) => render(conf, data),
     );
   }
 }
@@ -793,10 +908,11 @@ InlineSpan inlineCodeSpan(
   // pull the theme's `fontFamilyPackage` in behind a caller's own
   // `fontFamily`, and the package prefix would then be applied to a family
   // that does not ship here. Unset fields are filled by `resolve` below.
-  final codeStyle = (config.inlineCodeStyle ??
-          resolvedStyleSheet(context, config).inlineCode ??
-          GptMarkdownTheme.of(context).inlineCode)
-      .resolve(Theme.of(context).colorScheme);
+  final codeStyle =
+      (config.inlineCodeStyle ??
+              resolvedStyleSheet(context, config).inlineCode ??
+              GptMarkdownTheme.of(context).inlineCode)
+          .resolve(Theme.of(context).colorScheme);
   final textStyle = codeStyle.applyTo(config.style ?? const TextStyle());
 
   final builder = config.inlineCodeBuilder;
@@ -1190,9 +1306,10 @@ InlineSpan buildLinkSpan(
   // `LinkStyle.resolve` cannot reach these — it is handed a `ColorScheme` and
   // the defaults live on `GptMarkdownTheme`. Resolve here so a builder is
   // handed a `LinkStyle` whose fields are genuinely filled in.
-  final linkStyleSpec = (resolvedStyleSheet(context, config).link ??
-          const LinkStyle())
-      .resolve(Theme.of(context).colorScheme);
+  final linkStyleSpec =
+      (resolvedStyleSheet(context, config).link ?? const LinkStyle()).resolve(
+        Theme.of(context).colorScheme,
+      );
   final baseColor = linkStyleSpec.color ?? theme.linkColor;
   final hoverColor = linkStyleSpec.hoverColor ?? theme.linkHoverColor;
   final decoration = linkStyleSpec.decoration ?? TextDecoration.underline;
@@ -1428,23 +1545,21 @@ class TableMd extends BlockMd {
     String text,
     final GptMarkdownConfig config,
   ) {
-    final tableStyle = (resolvedStyleSheet(context, config).table ??
-            const TableStyle())
-        .resolve(Theme.of(context).colorScheme);
+    final tableStyle =
+        (resolvedStyleSheet(context, config).table ?? const TableStyle())
+            .resolve(Theme.of(context).colorScheme);
     final tableRadius = tableStyle.borderRadius;
-    final List<Map<int, String>> value =
-        text
-            .split('\n')
-            .map<Map<int, String>>(
-              (e) =>
-                  e
-                      .trim()
-                      .split('|')
-                      .where((element) => element.isNotEmpty)
-                      .toList()
-                      .asMap(),
-            )
-            .toList();
+    final List<Map<int, String>> value = text
+        .split('\n')
+        .map<Map<int, String>>(
+          (e) => e
+              .trim()
+              .split('|')
+              .where((element) => element.isNotEmpty)
+              .toList()
+              .asMap(),
+        )
+        .toList();
 
     // Check if table has a header and separator row
     bool hasHeader = value.length >= 2;
@@ -1492,25 +1607,24 @@ class TableMd extends BlockMd {
     var tableBuilder = config.tableBuilder;
 
     if (tableBuilder != null) {
-      var customTable =
-          List<CustomTableRow?>.generate(value.length, (index) {
-            var isHeader = index == 0;
-            var row = value[index];
-            if (row.isEmpty) {
-              return null;
-            }
-            if (index == 1) {
-              return null;
-            }
-            var fields = List<CustomTableField>.generate(maxCol, (index) {
-              var field = row[index];
-              return CustomTableField(
-                data: field ?? "",
-                alignment: columnAlignments[index],
-              );
-            });
-            return CustomTableRow(isHeader: isHeader, fields: fields);
-          }).nonNulls.toList();
+      var customTable = List<CustomTableRow?>.generate(value.length, (index) {
+        var isHeader = index == 0;
+        var row = value[index];
+        if (row.isEmpty) {
+          return null;
+        }
+        if (index == 1) {
+          return null;
+        }
+        var fields = List<CustomTableField>.generate(maxCol, (index) {
+          var field = row[index];
+          return CustomTableField(
+            data: field ?? "",
+            alignment: columnAlignments[index],
+          );
+        });
+        return CustomTableRow(isHeader: isHeader, fields: fields);
+      }).nonNulls.toList();
       return tableBuilder(
         context,
         customTable,
@@ -1520,116 +1634,110 @@ class TableMd extends BlockMd {
     }
 
     return _TableViewport(
+      overflow: tableStyle.overflow ?? TableOverflow.scroll,
       child: Table(
         textDirection: config.textDirection,
         defaultColumnWidth:
-            tableStyle.columnWidth ?? const CustomTableColumnWidth(),
+            tableStyle.columnWidth ??
+            _defaultTableColumnWidth(tableStyle.overflow, maxCol),
         defaultVerticalAlignment: TableCellVerticalAlignment.middle,
         border: TableBorder.all(
           width: tableStyle.borderWidth ?? 1,
           color:
               tableStyle.borderColor ?? Theme.of(context).colorScheme.onSurface,
-          borderRadius:
-              tableRadius == null
-                  ? BorderRadius.zero
-                  : BorderRadius.all(tableRadius),
+          borderRadius: tableRadius == null
+              ? BorderRadius.zero
+              : BorderRadius.all(tableRadius),
         ),
-        children:
-            value
-                .asMap()
-                .entries
-                .where((entry) {
-                  // Skip the separator row (second row) from rendering
-                  if (hasHeader && entry.key == 1) {
-                    return false;
+        children: value
+            .asMap()
+            .entries
+            .where((entry) {
+              // Skip the separator row (second row) from rendering
+              if (hasHeader && entry.key == 1) {
+                return false;
+              }
+              return true;
+            })
+            .map<TableRow>((entry) {
+              final isHeader = hasHeader && entry.key == 0;
+              // Stripes count data rows, so the header never takes one
+              // and the first row under it is always unstriped. The
+              // separator row is already filtered out above, so the key
+              // is the source row index: data rows start at 2 with a
+              // header and at 0 without.
+              final stripe = tableStyle.rowStripeColor;
+              final dataIndex = hasHeader ? entry.key - 2 : entry.key;
+              return TableRow(
+                decoration: isHeader
+                    ? BoxDecoration(
+                        color:
+                            tableStyle.headerBackground ??
+                            Theme.of(
+                              context,
+                            ).colorScheme.surfaceContainerHighest,
+                      )
+                    : (stripe != null && dataIndex.isOdd)
+                    ? BoxDecoration(color: stripe)
+                    : null,
+                children: List.generate(maxCol, (index) {
+                  var e = entry.value;
+                  String data = e[index] ?? "";
+                  if (RegExp(r"^:?--+:?$").hasMatch(data.trim()) ||
+                      data.trim().isEmpty) {
+                    return const SizedBox();
                   }
-                  return true;
-                })
-                .map<TableRow>((entry) {
-                  final isHeader = hasHeader && entry.key == 0;
-                  // Stripes count data rows, so the header never takes one
-                  // and the first row under it is always unstriped. The
-                  // separator row is already filtered out above, so the key
-                  // is the source row index: data rows start at 2 with a
-                  // header and at 0 without.
-                  final stripe = tableStyle.rowStripeColor;
-                  final dataIndex = hasHeader ? entry.key - 2 : entry.key;
-                  return TableRow(
-                    decoration:
-                        isHeader
-                            ? BoxDecoration(
-                              color:
-                                  tableStyle.headerBackground ??
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.surfaceContainerHighest,
-                            )
-                            : (stripe != null && dataIndex.isOdd)
-                            ? BoxDecoration(color: stripe)
-                            : null,
-                    children: List.generate(maxCol, (index) {
-                      var e = entry.value;
-                      String data = e[index] ?? "";
-                      if (RegExp(r"^:?--+:?$").hasMatch(data.trim()) ||
-                          data.trim().isEmpty) {
-                        return const SizedBox();
-                      }
 
-                      // Apply alignment based on column alignment
-                      Widget content = Padding(
-                        padding:
-                            tableStyle.cellPadding ??
-                            const EdgeInsets.symmetric(
-                              horizontal: 8,
-                              vertical: 4,
-                            ),
-                        child: MdWidget(
-                          context,
-                          (e[index] ?? "").trim(),
-                          false,
-                          config: config.copyWith(
-                            scope: MarkdownScope.tableCell,
-                          ),
-                        ),
-                      );
-                      // Merged into the ambient style rather than replacing
-                      // it, so setting only `fontWeight` keeps the document's
-                      // family, size and colour.
-                      final headerStyle = tableStyle.headerTextStyle;
-                      if (isHeader && headerStyle != null) {
-                        content = DefaultTextStyle.merge(
-                          style: headerStyle,
-                          child: content,
-                        );
-                      }
-
-                      // Only a column that pulls its content off the leading
-                      // edge needs an alignment box. A left-aligned cell is
-                      // already flush left: the table hands it a tight width
-                      // and the text starts at the leading edge on its own.
-                      // The box is not free — content-sized columns lay every
-                      // cell out twice, once to measure and once for real, so
-                      // a redundant wrapper is two extra layouts per cell.
-                      switch (columnAlignments[index]) {
-                        case TextAlign.center:
-                          content = Center(child: content);
-                          break;
-                        case TextAlign.right:
-                          content = Align(
-                            alignment: Alignment.centerRight,
-                            child: content,
-                          );
-                          break;
-                        case TextAlign.left:
-                        default:
-                          break;
-                      }
-
-                      return content;
-                    }),
+                  // Apply alignment based on column alignment
+                  Widget content = Padding(
+                    padding:
+                        tableStyle.cellPadding ??
+                        const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    child: MdWidget(
+                      context,
+                      (e[index] ?? "").trim(),
+                      false,
+                      config: config.copyWith(scope: MarkdownScope.tableCell),
+                    ),
                   );
-                })
-                .toList(),
+                  // Merged into the ambient style rather than replacing
+                  // it, so setting only `fontWeight` keeps the document's
+                  // family, size and colour.
+                  final headerStyle = tableStyle.headerTextStyle;
+                  if (isHeader && headerStyle != null) {
+                    content = DefaultTextStyle.merge(
+                      style: headerStyle,
+                      child: content,
+                    );
+                  }
+
+                  // Only a column that pulls its content off the leading
+                  // edge needs an alignment box. A left-aligned cell is
+                  // already flush left: the table hands it a tight width
+                  // and the text starts at the leading edge on its own.
+                  // The box is not free — content-sized columns lay every
+                  // cell out twice, once to measure and once for real, so
+                  // a redundant wrapper is two extra layouts per cell.
+                  switch (columnAlignments[index]) {
+                    case TextAlign.center:
+                      content = Center(child: content);
+                      break;
+                    case TextAlign.right:
+                      content = Align(
+                        alignment: Alignment.centerRight,
+                        child: content,
+                      );
+                      break;
+                    case TextAlign.left:
+                    default:
+                      break;
+                  }
+
+                  return content;
+                }),
+              );
+            })
+            .toList(),
       ),
     );
   }

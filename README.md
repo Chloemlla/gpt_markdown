@@ -29,7 +29,7 @@
 
 ## ✨ Why gpt_markdown?
 
-- **Built for AI output** — Markdown, LaTeX, code blocks, tables, citations, images, task lists, and mixed rich content in one response.
+- **Built for AI output** — Markdown, LaTeX, code blocks, tables, alerts, citations, images, task lists, and mixed rich content in one response.
 - **Streaming that stays fast** — settled segments are reused while the live tail updates. At 12 KB, each update is 31× faster than in 1.2.1—or 74× faster with the lazy sliver. [See the benchmarks](docs/benchmark.md).
 - **Production-level control** — style sheets, Flutter theme extensions, component builders, callbacks, and custom components.
 - **Extensible inline UI** — add `@mentions`, `#channels`, `:emoji:`, issue references, and product-specific syntax without forking the renderer.
@@ -48,12 +48,12 @@
 
 ## 🖼️ What it renders
 
-Every image is one `GptMarkdown` widget with no styling applied — the defaults, in a dark theme. Click any of them for full size.
+Every image is one `GptMarkdown` widget in a light Material 3 theme. The only styling is softer table borders and compact checkboxes; the inline components are app-supplied builders. Click any of them for full size.
 
 |  |  |  |
 |:--|:--|:--|
-| <img alt="Rich text rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/rich-text.png?v=2"><br>**Rich text**<br>Headings, emphasis, lists, quotes, rules, autolinks. | <img alt="LaTeX rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/math.png?v=2"><br>**LaTeX**<br>Inline and display equations, on the text baseline. | <img alt="Tables rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/tables.png?v=2"><br>**Tables**<br>Per-column alignment, Markdown inside cells. |
-| <img alt="Code rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/code.png?v=2"><br>**Code**<br>Syntax highlighting, language labels, and copy controls. | <img alt="Task lists rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/lists.png?v=2"><br>**Task lists**<br>Checkboxes, ordered and nested lists, citation tags. | <img alt="Inline patterns rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/inline-patterns.png?v=2"><br>**Inline patterns**<br>Mentions, channels, shortcodes. `#2959` stays text. |
+| <img alt="Rich text rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/rich-text.png?v=3"><br>**Rich text**<br>Headings, emphasis, lists, quotes, rules, autolinks. | <img alt="LaTeX rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/math.png?v=3"><br>**LaTeX**<br>Inline and display equations, on the text baseline. | <img alt="Tables rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/tables.png?v=3"><br>**Tables**<br>Per-column alignment, Markdown inside cells. |
+| <img alt="Code rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/code.png?v=3"><br>**Code**<br>Syntax highlighting, language labels, and copy controls. | <img alt="Task lists rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/lists.png?v=3"><br>**Task lists**<br>Checkboxes, ordered and nested lists, citation tags. | <img alt="Custom inline components rendered by gpt_markdown" src="https://raw.githubusercontent.com/useval/gpt_markdown/main/screenshots/inline-components.png?v=3"><br>**Custom inline components**<br>Mentions, channels, status pills, file chips. `#2959` stays text. |
 
 ## 🛠️ Quick start
 

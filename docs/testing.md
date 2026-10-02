@@ -294,46 +294,45 @@ The package's defaults are locked by goldens in
 `test/golden/default_look_test.dart` — eight constructs in light and dark.
 
 > [!IMPORTANT]
-> **They run on Linux only**, and are skipped everywhere else.
+> **Goldens are off unless you ask for them**, on CI too.
 >
 > Text rasterisation is not identical across platforms, so a golden captured on
-> macOS fails on CI for reasons that are not a change. Pinning to one platform
-> is the only way the comparison means anything.
+> macOS fails on Linux for reasons that are not a change. Drawing text as
+> blocks was tried, and the images still differed by up to 1.4% between macOS
+> and Linux CI. So goldens are a local check, compared on the machine that
+> generated them:
+>
+> ```bash
+> just check --golden   # the full check, goldens included
+> just update-goldens   # regenerate after an intended change
+> ```
+>
+> Both set `GPT_MARKDOWN_GOLDENS`; without it the golden tests are skipped.
 
-A tolerance was tried and rejected. Any threshold loose enough to absorb
-cross-platform antialiasing also hides real changes — widening the blockquote
-bar from 3 to 9 points passed at a 0.5% tolerance, which defeats the point.
+`test/flutter_test_config.dart` installs `GoldenComparator`
+(`test/golden/golden_comparator.dart`) around every test. It allows each colour
+channel of each pixel to be off by up to `GoldenComparator.maxChannelDelta`
+(8 of 255) levels: the engine sometimes antialiases a clipped rounded corner a
+shade differently from run to run, even on one machine. A real change moves
+pixels by tens of levels and still fails. This is deliberately not a
+share-of-pixels tolerance: one of those, at 0.5%, let the blockquote bar widen
+from 3 to 9 points. `test/golden/golden_comparator_test.dart` checks that the
+wider bar still fails; it runs everywhere, CI included.
 
-To regenerate after an intended change, dispatch the workflow against your
-branch. It regenerates on Linux and commits the images back, so a maintainer
-on macOS or Windows never has to produce them by hand:
-
-```bash
-gh workflow run goldens.yml --ref my-branch
-gh run watch
-git pull
-```
-
-Pass `-f commit=false` to get the images as an artifact and commit them
-yourself. On Linux, `./scripts/goldens.sh` does the whole thing locally.
+To add a golden, add an entry to `_cases`, or call `markdownGolden` from
+`test/golden/golden_test_utils.dart`.
 
 > [!WARNING]
 > Regenerating is not a fix for a failing golden — it is how you record a
 > change you meant to make. `--update-goldens` overwrites the reference with
 > whatever the code now draws, so running it on a red build makes the
-> regression the new baseline. Look at the diff images first.
->
-> This is why the workflow is manual. If it ran on every push the goldens would
-> always match and the test could never fail.
-
-If a golden fails on CI, download the `golden-failures` artifact from the run —
-it contains the expected, actual and diff images, which is the only readable
-way to see what moved.
+> regression the new baseline. Look at the diff images in
+> `test/golden/failures/` first.
 
 ## README screenshots
 
 `./scripts/screenshots.sh` regenerates the showcase images in `screenshots/`
-from `tool/screenshots/`. One dark card per capability, laid out as a grid in
+from `tool/screenshots/`. One light card per capability, laid out as a grid in
 the README. They render through the test harness because that is
 the supported way to rasterise a widget to a file without opening a window.
 
@@ -349,12 +348,12 @@ CI and never gate a build.
 > URLs point at `main`, so an uncommitted image simply does not exist yet.
 
 > [!NOTE]
-> Two things in the images are harness artefacts, not defects in what a reader
-> would see. Text that resolves to a null font family — the code block's copy
-> button, for one — draws in the test font, whose glyphs are filled boxes, so
-> that button is switched off for the screenshots. Fonts are otherwise loaded
-> from paths resolved out of the SDK and `.dart_tool/package_config.json`, never
-> hardcoded.
+> The test renderer draws a blurred `BoxShadow` as a hard slab, so the cards
+> use a border instead of a shadow. Text that resolves to a null font family —
+> the code block's copy button, for one — would draw in the test font, whose
+> glyphs are filled boxes; `fonts.dart` registers Roboto under the test font's
+> names so it renders. Fonts are otherwise loaded from paths resolved out of the
+> SDK and `.dart_tool/package_config.json`, never hardcoded.
 
 ## Documentation snippets are compiled
 

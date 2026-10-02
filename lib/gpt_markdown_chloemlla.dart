@@ -7,6 +7,7 @@ export 'custom_widgets/markdown_text_scaling.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_error_image.dart';
@@ -16,6 +17,7 @@ import 'package:gpt_markdown_chloemlla/custom_widgets/unordered_ordered_list.dar
 import 'package:gpt_markdown_chloemlla/custom_widgets/markdown_config.dart';
 import 'dart:async';
 import 'dart:convert';
+import 'dart:collection';
 import 'dart:math';
 
 import 'custom_widgets/code_field.dart';
@@ -29,6 +31,7 @@ import 'streaming/reveal_effect.dart';
 import 'streaming/reveal_engine.dart';
 import 'streaming/reveal_spans.dart';
 import 'streaming/streaming_markdown.dart';
+import 'styles/alert_style.dart';
 import 'styles/block_quote_style.dart';
 import 'styles/heading_style.dart';
 import 'styles/link_style.dart';
@@ -62,6 +65,7 @@ export 'package:gpt_markdown_chloemlla/streaming/block_entrance.dart';
 export 'package:gpt_markdown_chloemlla/streaming/stream_split.dart';
 
 // Per-component appearance.
+export 'package:gpt_markdown_chloemlla/styles/alert_style.dart';
 export 'package:gpt_markdown_chloemlla/styles/block_quote_style.dart';
 export 'package:gpt_markdown_chloemlla/styles/heading_style.dart';
 export 'package:gpt_markdown_chloemlla/styles/link_style.dart';

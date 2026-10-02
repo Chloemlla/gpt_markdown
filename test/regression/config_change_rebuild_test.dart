@@ -88,11 +88,10 @@ void main() {
   testWidgets('autolinkSchemes takes effect without a remount', (tester) async {
     await tester.pumpWidget(
       _Harness(
-        builder:
-            (on) => GptMarkdown(
-              'open myapp://thing now',
-              autolinkSchemes: on ? const {'myapp'} : const {},
-            ),
+        builder: (on) => GptMarkdown(
+          'open myapp://thing now',
+          autolinkSchemes: on ? const {'myapp'} : const {},
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -105,8 +104,8 @@ void main() {
   testWidgets('autolink takes effect without a remount', (tester) async {
     await tester.pumpWidget(
       _Harness(
-        builder:
-            (on) => GptMarkdown('go to https://example.com', autolink: !on),
+        builder: (on) =>
+            GptMarkdown('go to https://example.com', autolink: !on),
       ),
     );
     await tester.pumpAndSettle();
@@ -119,11 +118,10 @@ void main() {
   testWidgets('inlineCodeStyle takes effect without a remount', (tester) async {
     await tester.pumpWidget(
       _Harness(
-        builder:
-            (on) => GptMarkdown(
-              'run `code` now',
-              inlineCodeStyle: InlineCodeStyle(borderWidth: on ? 0 : 1),
-            ),
+        builder: (on) => GptMarkdown(
+          'run `code` now',
+          inlineCodeStyle: InlineCodeStyle(borderWidth: on ? 0 : 1),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -145,11 +143,10 @@ void main() {
 
     await tester.pumpWidget(
       _Harness(
-        builder:
-            (on) => GptMarkdown(
-              'say !!hello!! now',
-              inlineComponents: on ? extra : null,
-            ),
+        builder: (on) => GptMarkdown(
+          'say !!hello!! now',
+          inlineComponents: on ? extra : null,
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -163,19 +160,17 @@ void main() {
     final patterns = [
       InlinePattern(
         pattern: RegExp(r'#general'),
-        builder:
-            (context, match, style) =>
-                WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+        builder: (context, match, style) =>
+            WidgetSpan(child: Text('CHIP:${match.group(0)}')),
       ),
     ];
 
     await tester.pumpWidget(
       _Harness(
-        builder:
-            (on) => GptMarkdown(
-              'see #general now',
-              inlinePatterns: on ? patterns : null,
-            ),
+        builder: (on) => GptMarkdown(
+          'see #general now',
+          inlinePatterns: on ? patterns : null,
+        ),
       ),
     );
     await tester.pumpAndSettle();

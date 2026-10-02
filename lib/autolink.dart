@@ -79,10 +79,9 @@ class AutolinkMd extends InlineMd {
       return TextSpan(text: text, style: config.style);
     }
 
-    final resolved =
-        text.startsWith('<')
-            ? _parseAngle(text)
-            : _parseBare(text, config.autolinkSchemes);
+    final resolved = text.startsWith('<')
+        ? _parseAngle(text)
+        : _parseBare(text, config.autolinkSchemes);
     if (resolved == null) {
       return TextSpan(text: text, style: config.style);
     }

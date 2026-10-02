@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../custom_widgets/inline_code.dart';
+import 'alert_style.dart';
+import 'style_lerp.dart';
 import 'block_quote_style.dart';
 import 'heading_style.dart';
 import 'link_style.dart';
@@ -53,7 +55,9 @@ class GptMarkdownStyleSheet {
     this.hr,
     this.sourceTag,
     this.latex,
-  });
+    this.alert,
+    this.blockSpacing,
+  }) : assert(blockSpacing == null || blockSpacing >= 0);
 
   /// How blockquotes are drawn.
   final BlockQuoteStyle? blockQuote;
@@ -91,6 +95,19 @@ class GptMarkdownStyleSheet {
   /// How rendered maths are drawn.
   final LatexStyle? latex;
 
+  /// How alerts — quotes opening with `[!NOTE]` and the like — are drawn.
+  final AlertStyle? alert;
+
+  /// Vertical space between blocks — paragraphs, headings, lists, code, tables
+  /// and the rest — in logical pixels at a text scale of 1. It grows with the
+  /// text scale, so the gap stays in proportion when a reader enlarges text.
+  ///
+  /// Defaults to one empty line: 1.15 × the font size, 16 pixels at the
+  /// default 14. Extra blank lines in the source never add more; three or ten
+  /// in a row give the same single gap. A block's own margin or padding, such
+  /// as [BlockQuoteStyle.margin], is added on top.
+  final double? blockSpacing;
+
   /// This sheet, with any unset value taken from [other], field by field.
   GptMarkdownStyleSheet merge(GptMarkdownStyleSheet? other) {
     if (other == null) {
@@ -109,6 +126,8 @@ class GptMarkdownStyleSheet {
       hr: hr?.merge(other.hr) ?? other.hr,
       sourceTag: sourceTag?.merge(other.sourceTag) ?? other.sourceTag,
       latex: latex?.merge(other.latex) ?? other.latex,
+      alert: alert?.merge(other.alert) ?? other.alert,
+      blockSpacing: blockSpacing ?? other.blockSpacing,
     );
   }
 
@@ -126,6 +145,8 @@ class GptMarkdownStyleSheet {
     HrStyle? hr,
     SourceTagStyle? sourceTag,
     LatexStyle? latex,
+    AlertStyle? alert,
+    double? blockSpacing,
   }) {
     return GptMarkdownStyleSheet(
       blockQuote: blockQuote ?? this.blockQuote,
@@ -140,6 +161,8 @@ class GptMarkdownStyleSheet {
       hr: hr ?? this.hr,
       sourceTag: sourceTag ?? this.sourceTag,
       latex: latex ?? this.latex,
+      alert: alert ?? this.alert,
+      blockSpacing: blockSpacing ?? this.blockSpacing,
     );
   }
 
@@ -165,6 +188,8 @@ class GptMarkdownStyleSheet {
       hr: HrStyle.lerp(a?.hr, b?.hr, t),
       sourceTag: SourceTagStyle.lerp(a?.sourceTag, b?.sourceTag, t),
       latex: LatexStyle.lerp(a?.latex, b?.latex, t),
+      alert: AlertStyle.lerp(a?.alert, b?.alert, t),
+      blockSpacing: lerpDouble(a?.blockSpacing, b?.blockSpacing, t),
     );
   }
 
@@ -185,7 +210,9 @@ class GptMarkdownStyleSheet {
         other.image == image &&
         other.hr == hr &&
         other.sourceTag == sourceTag &&
-        other.latex == latex;
+        other.latex == latex &&
+        other.alert == alert &&
+        other.blockSpacing == blockSpacing;
   }
 
   @override
@@ -202,5 +229,7 @@ class GptMarkdownStyleSheet {
     hr,
     sourceTag,
     latex,
+    alert,
+    blockSpacing,
   );
 }

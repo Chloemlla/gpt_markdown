@@ -50,40 +50,40 @@ void main() {
                 textScaler: TextScaler.linear(explicit ? 1 : scale),
               ),
               child: Scaffold(
-                body:
-                    mode == 'sliver'
-                        ? CustomScrollView(
-                          slivers: [
-                            SliverGptMarkdown(
-                              source,
-                              config: GptMarkdownConfig(
-                                textScaler:
-                                    explicit ? TextScaler.linear(scale) : null,
-                              ),
-                            ),
-                          ],
-                        )
-                        : SingleChildScrollView(
-                          child: GptMarkdown(
+                body: mode == 'sliver'
+                    ? CustomScrollView(
+                        slivers: [
+                          SliverGptMarkdown(
                             source,
-                            incremental: mode != 'legacy',
-                            maxLines: mode == 'maxLines' ? 100 : null,
-                            textScaler:
-                                explicit ? TextScaler.linear(scale) : null,
+                            config: GptMarkdownConfig(
+                              textScaler: explicit
+                                  ? TextScaler.linear(scale)
+                                  : null,
+                            ),
                           ),
+                        ],
+                      )
+                    : SingleChildScrollView(
+                        child: GptMarkdown(
+                          source,
+                          incremental: mode != 'legacy',
+                          maxLines: mode == 'maxLines' ? 100 : null,
+                          textScaler: explicit
+                              ? TextScaler.linear(scale)
+                              : null,
                         ),
+                      ),
               ),
             ),
           ),
         );
-        List<Size> sizes() =>
-            find.byType(Math).evaluate().map((element) {
-              final box = element.renderObject! as RenderBox;
-              return MatrixUtils.transformRect(
-                box.getTransformTo(null),
-                Offset.zero & box.size,
-              ).size;
-            }).toList();
+        List<Size> sizes() => find.byType(Math).evaluate().map((element) {
+          final box = element.renderObject! as RenderBox;
+          return MatrixUtils.transformRect(
+            box.getTransformTo(null),
+            Offset.zero & box.size,
+          ).size;
+        }).toList();
         await pump(1);
         final small = sizes();
         expect(small, hasLength(3));

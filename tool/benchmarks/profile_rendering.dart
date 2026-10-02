@@ -12,7 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 
-String section(int i) => '''
+String section(int i) =>
+    '''
 ## Step ${i + 1}: configure the worker
 
 The worker processes incoming requests and records the result before acknowledging
@@ -86,15 +87,13 @@ typedef MarkdownBenchmarkBuilder =
     Widget Function(String source, Key key, bool streaming, bool animate);
 
 Map<String, MarkdownBenchmarkBuilder> _builders = {
-  'current':
-      (source, key, streaming, animate) => GptMarkdown(
-        source,
-        key: key,
-        isStreaming: streaming,
-        animation:
-            animate ? GptMarkdownAnimation.fade : GptMarkdownAnimation.none,
-        style: const TextStyle(fontSize: 16, color: Colors.black),
-      ),
+  'current': (source, key, streaming, animate) => GptMarkdown(
+    source,
+    key: key,
+    isStreaming: streaming,
+    animation: animate ? GptMarkdownAnimation.fade : GptMarkdownAnimation.none,
+    style: const TextStyle(fontSize: 16, color: Colors.black),
+  ),
 };
 
 Map<String, Widget Function(Widget)> _viewports = {};
@@ -102,8 +101,8 @@ Map<String, Widget Function(Widget)> _viewports = {};
 void main() {
   const withSliver = bool.fromEnvironment('BENCH_SLIVER');
   if (withSliver) {
-    _builders['sliver'] =
-        (source, key, streaming, animate) => SliverGptMarkdown(
+    _builders['sliver'] = (source, key, streaming, animate) =>
+        SliverGptMarkdown(
           source,
           key: key,
           config: const GptMarkdownConfig(
@@ -191,19 +190,20 @@ class _BenchmarkState extends State<_Benchmark> {
     await action();
     await drain();
     recording = false;
-    final ui =
-        frames.map((f) => f.buildDuration.inMicroseconds / 1000).toList();
-    final raster =
-        frames.map((f) => f.rasterDuration.inMicroseconds / 1000).toList();
-    final work =
-        frames
-            .map(
-              (f) =>
-                  (f.buildDuration.inMicroseconds +
-                      f.rasterDuration.inMicroseconds) /
-                  1000,
-            )
-            .toList();
+    final ui = frames
+        .map((f) => f.buildDuration.inMicroseconds / 1000)
+        .toList();
+    final raster = frames
+        .map((f) => f.rasterDuration.inMicroseconds / 1000)
+        .toList();
+    final work = frames
+        .map(
+          (f) =>
+              (f.buildDuration.inMicroseconds +
+                  f.rasterDuration.inMicroseconds) /
+              1000,
+        )
+        .toList();
     stdout.writeln(
       'PERF_JSON ${jsonEncode({'variant': variant, 'case': name, 'round': round, 'frames': frames.length, 'ui_median_ms': percentile(ui, .5), 'ui_p95_ms': percentile(ui, .95), 'raster_median_ms': percentile(raster, .5), 'raster_p95_ms': percentile(raster, .95), 'work_median_ms': percentile(work, .5), 'over_60hz_budget': frames.where((f) => f.buildDuration.inMicroseconds > 16667 || f.rasterDuration.inMicroseconds > 16667).length})}',
     );
@@ -264,10 +264,9 @@ class _BenchmarkState extends State<_Benchmark> {
           bool.fromEnvironment('BENCH_COLD_ONLY') ||
           bool.fromEnvironment('BENCH_SLIVER');
       for (var round = 0; round < rounds; round++) {
-        final order =
-            round.isEven
-                ? _builders.keys.toList()
-                : _builders.keys.toList().reversed.toList();
+        final order = round.isEven
+            ? _builders.keys.toList()
+            : _builders.keys.toList().reversed.toList();
         for (final scenario in [
           'cold_short',
           'cold_long',

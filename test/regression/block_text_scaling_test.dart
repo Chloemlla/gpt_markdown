@@ -32,30 +32,29 @@ void main() {
                   textScaler: TextScaler.linear(explicit ? 1 : scale),
                 ),
                 child: Scaffold(
-                  body:
-                      mode == 'sliver'
-                          ? CustomScrollView(
-                            slivers: [
-                              SliverGptMarkdown(
-                                entry.value.$1,
-                                config: GptMarkdownConfig(
-                                  textScaler:
-                                      explicit
-                                          ? TextScaler.linear(scale)
-                                          : null,
-                                ),
-                              ),
-                            ],
-                          )
-                          : SingleChildScrollView(
-                            child: GptMarkdown(
+                  body: mode == 'sliver'
+                      ? CustomScrollView(
+                          slivers: [
+                            SliverGptMarkdown(
                               entry.value.$1,
-                              incremental: mode != 'legacy',
-                              maxLines: mode == 'maxLines' ? 100 : null,
-                              textScaler:
-                                  explicit ? TextScaler.linear(scale) : null,
+                              config: GptMarkdownConfig(
+                                textScaler: explicit
+                                    ? TextScaler.linear(scale)
+                                    : null,
+                              ),
                             ),
+                          ],
+                        )
+                      : SingleChildScrollView(
+                          child: GptMarkdown(
+                            entry.value.$1,
+                            incremental: mode != 'legacy',
+                            maxLines: mode == 'maxLines' ? 100 : null,
+                            textScaler: explicit
+                                ? TextScaler.linear(scale)
+                                : null,
                           ),
+                        ),
                 ),
               ),
             ),

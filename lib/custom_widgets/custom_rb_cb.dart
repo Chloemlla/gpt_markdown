@@ -166,14 +166,12 @@ class CustomCb extends StatelessWidget {
           value: value,
           activeColor: style.checkedColor,
           checkColor: style.checkColor,
-          side:
-              unchecked == null ? null : BorderSide(color: unchecked, width: 2),
-          shape:
-              radius == null
-                  ? null
-                  : RoundedRectangleBorder(
-                    borderRadius: BorderRadius.all(radius),
-                  ),
+          side: unchecked == null
+              ? null
+              : BorderSide(color: unchecked, width: 2),
+          shape: radius == null
+              ? null
+              : RoundedRectangleBorder(borderRadius: BorderRadius.all(radius)),
           onChanged: (next) {
             if (interactive && changed != null && next != null) {
               changed(next);

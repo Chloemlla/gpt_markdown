@@ -173,9 +173,8 @@ void main() {
                 InlineDirective(
                   open: _open,
                   close: _close,
-                  builder:
-                      (context, payload, style) =>
-                          const WidgetSpan(child: SizedBox()),
+                  builder: (context, payload, style) =>
+                      const WidgetSpan(child: SizedBox()),
                 ),
               ],
             ),

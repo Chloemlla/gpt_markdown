@@ -179,6 +179,62 @@ typedef BlockQuoteBuilder =
       BlockQuoteStyle style,
     );
 
+/// Builds the widget for an alert — a quote opening with a marker such as
+/// `[!NOTE]`. See [AlertBuildDetails] for what it is given.
+typedef AlertBuilder =
+    Widget Function(BuildContext context, AlertBuildDetails details);
+
+/// What the alert builder is told about one alert.
+///
+/// Created by the package. Return [defaultAlert] to keep the stock look,
+/// [asBlockQuote] to draw this alert as the plain quote it would be without
+/// alert support, or a widget of your own built from [title] and [content].
+final class AlertBuildDetails {
+  /// Creates alert details.
+  AlertBuildDetails({
+    required this.context,
+    required this.config,
+    required this.type,
+    required this.style,
+    required this.title,
+    required this.content,
+    required Widget Function() buildDefault,
+    required Widget Function() buildQuote,
+  }) : _buildDefault = buildDefault,
+       _buildQuote = buildQuote;
+
+  /// The element this alert is being built in.
+  final BuildContext context;
+
+  /// The configuration in force at this point in the document.
+  final GptMarkdownConfig config;
+
+  /// Which marker opened the alert.
+  final MarkdownAlertType type;
+
+  /// The [AlertStyle] for [type], fully resolved: accent colour, icon, title
+  /// and spacing, with the per-type override, theme and defaults folded in.
+  final AlertStyle style;
+
+  /// The stock title row — icon and title text in the accent colour — or an
+  /// empty box when the style hides both.
+  final Widget title;
+
+  /// The rendered body, without the marker line.
+  final Widget content;
+
+  final Widget Function() _buildDefault;
+  final Widget Function() _buildQuote;
+
+  /// The alert the package would have drawn.
+  Widget defaultAlert() => _buildDefault();
+
+  /// This alert drawn as an ordinary quote, marker line included — exactly
+  /// what the package drew before it knew about alerts, honouring
+  /// `blockQuoteBuilder`.
+  Widget asBlockQuote() => _buildQuote();
+}
+
 /// A builder function for the image.
 ///
 /// [width] and [height] come from the image alt text when parsed as `WxH`
@@ -518,6 +574,7 @@ class GptMarkdownConfig {
     this.inlineCodeStyle,
     this.styleSheet,
     this.blockQuoteBuilder,
+    this.alertBuilder,
     this.headingBuilder,
     this.checkboxBuilder,
     this.radioOptionBuilder,
@@ -670,6 +727,13 @@ class GptMarkdownConfig {
   /// Replaces the whole blockquote widget.
   final BlockQuoteBuilder? blockQuoteBuilder;
 
+  /// Replaces the whole alert widget. See [AlertBuildDetails].
+  ///
+  /// When this is null and [blockQuoteBuilder] is set, alerts go to
+  /// [blockQuoteBuilder] as ordinary quotes, as they did before alerts were
+  /// recognised — an app that customised its quotes keeps its look.
+  final AlertBuilder? alertBuilder;
+
   /// Replaces the whole heading widget.
   final HeadingBuilder? headingBuilder;
 
@@ -749,6 +813,7 @@ class GptMarkdownConfig {
     final InlineCodeStyle? inlineCodeStyle,
     final GptMarkdownStyleSheet? styleSheet,
     final BlockQuoteBuilder? blockQuoteBuilder,
+    final AlertBuilder? alertBuilder,
     final HeadingBuilder? headingBuilder,
     final CheckboxBuilder? checkboxBuilder,
     final RadioOptionBuilder? radioOptionBuilder,
@@ -796,6 +861,7 @@ class GptMarkdownConfig {
       inlineCodeStyle: inlineCodeStyle ?? this.inlineCodeStyle,
       styleSheet: styleSheet ?? this.styleSheet,
       blockQuoteBuilder: blockQuoteBuilder ?? this.blockQuoteBuilder,
+      alertBuilder: alertBuilder ?? this.alertBuilder,
       headingBuilder: headingBuilder ?? this.headingBuilder,
       checkboxBuilder: checkboxBuilder ?? this.checkboxBuilder,
       radioOptionBuilder: radioOptionBuilder ?? this.radioOptionBuilder,
@@ -837,8 +903,9 @@ class GptMarkdownConfig {
     // `textScaler`. Descendant blocks inside this paragraph must switch
     // blocksRenderDirectly off: their placeholder already supplies scaling.
     final scaleFromAmbient = ambientScaling && !isRoot;
-    final effectiveScaler =
-        scaleFromAmbient ? null : (isRoot ? textScaler : TextScaler.noScaling);
+    final effectiveScaler = scaleFromAmbient
+        ? null
+        : (isRoot ? textScaler : TextScaler.noScaling);
     final codeRuns = collectInlineCodeRuns(span);
     // A tap target is resolved by the paragraph's render object, so a
     // paragraph holding one has to go through BidiText. Missing this renders

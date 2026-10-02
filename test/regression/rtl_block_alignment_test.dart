@@ -66,16 +66,11 @@ void main() {
             textDirection: direction,
             style: const TextStyle(fontSize: 16),
             headingBuilder: heading,
-            latexBuilder:
-                (_, _, _, _) => const SizedBox(
-                  key: ValueKey('math'),
-                  width: 64,
-                  height: 24,
-                ),
-            components:
-                mode == 'legacy sliver'
-                    ? MarkdownComponent.globalComponents
-                    : null,
+            latexBuilder: (_, _, _, _) =>
+                const SizedBox(key: ValueKey('math'), width: 64, height: 24),
+            components: mode == 'legacy sliver'
+                ? MarkdownComponent.globalComponents
+                : null,
           );
           final Widget content;
           if (mode.contains('sliver')) {
@@ -90,21 +85,19 @@ void main() {
                 style: const TextStyle(fontSize: 16),
                 incremental: mode != 'legacy',
                 headingBuilder: heading,
-                latexBuilder:
-                    (_, _, _, _) => const SizedBox(
-                      key: ValueKey('math'),
-                      width: 64,
-                      height: 24,
-                    ),
+                latexBuilder: (_, _, _, _) => const SizedBox(
+                  key: ValueKey('math'),
+                  width: 64,
+                  height: 24,
+                ),
               ),
             );
           }
           return MaterialApp(
             home: Directionality(
-              textDirection:
-                  direction == TextDirection.rtl
-                      ? TextDirection.ltr
-                      : TextDirection.rtl,
+              textDirection: direction == TextDirection.rtl
+                  ? TextDirection.ltr
+                  : TextDirection.rtl,
               child: Align(
                 alignment: Alignment.topLeft,
                 child: SizedBox(
@@ -142,18 +135,15 @@ void main() {
             find.byKey(const ValueKey('math')),
           ]) {
             expect(finder, findsWidgets);
-            final rects =
-                finder
-                    .evaluate()
-                    .map(
-                      (element) =>
-                          tester.getRect(find.byWidget(element.widget)),
-                    )
-                    .toList();
+            final rects = finder
+                .evaluate()
+                .map((element) => tester.getRect(find.byWidget(element.widget)))
+                .toList();
             final id = finder.describeMatch(Plurality.many);
             if (direction == TextDirection.ltr) {
-              leadingOffsets[id] =
-                  rects.map((rect) => rect.left - frame.left).toList();
+              leadingOffsets[id] = rects
+                  .map((rect) => rect.left - frame.left)
+                  .toList();
             } else {
               final offsets = leadingOffsets[id]!;
               expect(rects.length, offsets.length);

@@ -52,16 +52,15 @@ class _SliverGptMarkdownState extends State<SliverGptMarkdown> {
 
   void _updateSource() {
     final config = widget.config;
-    _source =
-        _normalizeMarkdownSource(
-          widget.data,
-          widget.useDollarSignsForLatex,
-          config.inlineDirectives,
-          blockRegistry:
-              config.components == null && config.inlineComponents == null
-                  ? config.blockRegistry
-                  : null,
-        ).text;
+    _source = _normalizeMarkdownSource(
+      widget.data,
+      widget.useDollarSignsForLatex,
+      config.inlineDirectives,
+      blockRegistry:
+          config.components == null && config.inlineComponents == null
+          ? config.blockRegistry
+          : null,
+    ).text;
     // Legacy inline patterns match original source, not the modern parser's
     // masked tokens. Do not mask or invoke modern syntaxes on this route.
     if (config.components != null || config.inlineComponents != null) return;
@@ -104,8 +103,8 @@ class _SliverGptMarkdownState extends State<SliverGptMarkdown> {
     return scaler == null
         ? directed
         : MediaQuery(
-          data: MediaQuery.of(context).copyWith(textScaler: scaler),
-          child: directed,
-        );
+            data: MediaQuery.of(context).copyWith(textScaler: scaler),
+            child: directed,
+          );
   }
 }

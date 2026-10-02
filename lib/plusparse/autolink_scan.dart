@@ -165,10 +165,9 @@ class _AutolinkScan {
       }
 
       final element = text.substring(i, end);
-      final resolved =
-          angle
-              ? AutolinkMd._parseAngle(element)
-              : AutolinkMd._parseBare(element, config.autolinkSchemes);
+      final resolved = angle
+          ? AutolinkMd._parseAngle(element)
+          : AutolinkMd._parseBare(element, config.autolinkSchemes);
       if (resolved == null) {
         // The regex claimed this too, and `AutolinkMd.span` handed it straight
         // back as text. It stays part of the pending plain run.

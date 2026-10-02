@@ -261,8 +261,9 @@ class MarkdownSerializer {
 
     // Link button
     if (widget is LinkButton) {
-      final urlPart =
-          widget.url != null ? ', url="${_escapeText(widget.url!)}"' : '';
+      final urlPart = widget.url != null
+          ? ', url="${_escapeText(widget.url!)}"'
+          : '';
       _write('LINK("${_escapeText(widget.text)}"$urlPart)');
       return;
     }

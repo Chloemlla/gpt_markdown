@@ -76,8 +76,8 @@ Widget docsCompile(BuildContext context) {
       InlineDirective(
         open: '\u{E200}widget\u{E202}',
         close: '\u{E201}',
-        builder:
-            (context, payload, style) => TextSpan(text: payload, style: style),
+        builder: (context, payload, style) =>
+            TextSpan(text: payload, style: style),
       ),
     ],
     styleSheet: const GptMarkdownStyleSheet(
@@ -101,22 +101,20 @@ Widget docsCompile(BuildContext context) {
       InlinePattern(
         pattern: RegExp(r'(?<![\w-])GH-(\d+)\b'),
         scopes: MarkdownComponent.allScopes,
-        builder:
-            (context, match, style) => TextSpan(
-              text: match.group(0),
-              style: style.copyWith(fontWeight: FontWeight.w600),
-              recognizer: TapGestureRecognizer()..onTap = () {},
-            ),
+        builder: (context, match, style) => TextSpan(
+          text: match.group(0),
+          style: style.copyWith(fontWeight: FontWeight.w600),
+          recognizer: TapGestureRecognizer()..onTap = () {},
+        ),
       ),
       InlinePattern.prefixed(
         prefix: '#',
         knownNames: const ['general'],
-        builder:
-            (context, match, style) => WidgetSpan(
-              alignment: PlaceholderAlignment.baseline,
-              baseline: TextBaseline.alphabetic,
-              child: Text(match.group(0) ?? ''),
-            ),
+        builder: (context, match, style) => WidgetSpan(
+          alignment: PlaceholderAlignment.baseline,
+          baseline: TextBaseline.alphabetic,
+          child: Text(match.group(0) ?? ''),
+        ),
       ),
     ],
     headingBuilder: (context, level, content, style) => content,
@@ -133,12 +131,11 @@ Widget docsCompile(BuildContext context) {
     inlineSourceTagBuilder: (tag) => tag.defaultSpan(),
     orderedListBuilder: (context, no, child, config) => child,
     unOrderedListBuilder: (context, child, config) => child,
-    inlineCodeBuilder:
-        (context, code, style, codeStyle) => CodeTextSpan(
-          text: code,
-          style: style,
-          codeStyle: codeStyle.copyWith(backgroundColor: Colors.amber),
-        ),
+    inlineCodeBuilder: (context, code, style, codeStyle) => CodeTextSpan(
+      text: code,
+      style: style,
+      codeStyle: codeStyle.copyWith(backgroundColor: Colors.amber),
+    ),
   );
 }
 
@@ -197,39 +194,35 @@ String plainTextSnippet(WidgetTester tester) {
 Widget builderSnippets() {
   return GptMarkdown(
     'text',
-    blockQuoteBuilder:
-        (context, content, style) => DecoratedBox(
-          decoration: BoxDecoration(
-            border: BorderDirectional(
-              start: BorderSide(
-                color: style.barColor ?? Colors.grey,
-                width: style.barWidth ?? 3,
-              ),
-            ),
-          ),
-          child: content,
-        ),
-    headingBuilder:
-        (context, level, content, style) => Row(
-          crossAxisAlignment: CrossAxisAlignment.baseline,
-          textBaseline: TextBaseline.alphabetic,
-          children: [
-            Flexible(child: content),
-            IconButton(icon: const Icon(Icons.link), onPressed: () {}),
-          ],
-        ),
-    codeBuilder:
-        (context, name, code, closed) => Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(12),
-          child: SelectableText(
-            code,
-            style: const TextStyle(fontFamily: 'monospace'),
+    blockQuoteBuilder: (context, content, style) => DecoratedBox(
+      decoration: BoxDecoration(
+        border: BorderDirectional(
+          start: BorderSide(
+            color: style.barColor ?? Colors.grey,
+            width: style.barWidth ?? 3,
           ),
         ),
-    inlineCodeBuilder:
-        (context, code, style, codeStyle) =>
-            baselineWidgetSpan(Text(code, style: style)),
+      ),
+      child: content,
+    ),
+    headingBuilder: (context, level, content, style) => Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
+      children: [
+        Flexible(child: content),
+        IconButton(icon: const Icon(Icons.link), onPressed: () {}),
+      ],
+    ),
+    codeBuilder: (context, name, code, closed) => Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      child: SelectableText(
+        code,
+        style: const TextStyle(fontFamily: 'monospace'),
+      ),
+    ),
+    inlineCodeBuilder: (context, code, style, codeStyle) =>
+        baselineWidgetSpan(Text(code, style: style)),
   );
 }
 
@@ -403,33 +396,26 @@ List<Widget> exampleOddsAndEnds() {
 Widget exampleTableBuilder() {
   return GptMarkdown(
     'text',
-    tableBuilder:
-        (context, tableRows, textStyle, config) => Table(
-          border: TableBorder.all(color: Colors.grey),
-          children:
-              tableRows
+    tableBuilder: (context, tableRows, textStyle, config) => Table(
+      border: TableBorder.all(color: Colors.grey),
+      children: tableRows
+          .map(
+            (row) => TableRow(
+              decoration: row.isHeader
+                  ? const BoxDecoration(color: Color(0xFFEEEEEE))
+                  : null,
+              children: row.fields
                   .map(
-                    (row) => TableRow(
-                      decoration:
-                          row.isHeader
-                              ? const BoxDecoration(color: Color(0xFFEEEEEE))
-                              : null,
-                      children:
-                          row.fields
-                              .map(
-                                (cell) => Padding(
-                                  padding: const EdgeInsets.all(8),
-                                  child: Text(
-                                    cell.data,
-                                    textAlign: cell.alignment,
-                                  ),
-                                ),
-                              )
-                              .toList(),
+                    (cell) => Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: Text(cell.data, textAlign: cell.alignment),
                     ),
                   )
                   .toList(),
-        ),
+            ),
+          )
+          .toList(),
+    ),
   );
 }
 
@@ -462,6 +448,59 @@ const readmeStyleSheet = GptMarkdownStyleSheet(
   codeBlock: CodeBlockStyle(borderRadius: Radius.circular(12)),
 );
 
+/// `docs/customization.md` — AlertStyle.
+Widget alertSnippets() {
+  return GptMarkdown(
+    'text',
+    styleSheet: const GptMarkdownStyleSheet(
+      alert: AlertStyle(
+        barWidth: 4,
+        backgroundColor: Color(0x0A000000),
+        borderRadius: Radius.circular(8),
+        warning: AlertStyle(
+          title: 'Heads up',
+          icon: Icons.bolt,
+          color: Colors.deepOrange,
+        ),
+        tip: AlertStyle(title: '', showIcon: false), // body only
+      ),
+    ),
+    alertBuilder: (context, details) {
+      if (details.type == MarkdownAlertType.tip) {
+        return details.asBlockQuote(); // no alert for tips
+      }
+      return Card(
+        color: details.style.color!.withValues(alpha: 0.08),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              details.title,
+              const SizedBox(height: 4),
+              details.content,
+            ],
+          ),
+        ),
+      );
+    },
+  );
+}
+
+/// `docs/customization.md` — ImageStyle, inline images in an imageBuilder.
+Widget dataUrlImageBuilder() {
+  return GptMarkdown(
+    'text',
+    imageBuilder: (context, url, width, height) => url.startsWith('data:')
+        ? Image.memory(
+            UriData.parse(url).contentAsBytes(),
+            width: width,
+            height: height,
+          )
+        : Image.network(url, width: width, height: height),
+  );
+}
+
 void main() {
   test('every snippet in docs/ compiles', () {
     // Referencing them keeps the analyzer honest about unused declarations.
@@ -472,6 +511,8 @@ void main() {
     expect(ShoutMd().exp, isA<RegExp>());
     expect(CalloutMd().expString, isA<String>());
     expect(builderSnippets, isNotNull);
+    expect(alertSnippets(), isA<GptMarkdown>());
+    expect(dataUrlImageBuilder(), isA<GptMarkdown>());
     expect(scopedPatterns(), hasLength(2));
     expect(delimitedPatterns(), hasLength(3));
     expect(plainTextSnippet, isNotNull);

@@ -25,12 +25,11 @@ InlinePattern chipPattern(RegExp pattern, {Set<MarkdownScope>? scopes}) {
   return InlinePattern(
     pattern: pattern,
     scopes: scopes ?? MarkdownComponent.allScopesExceptLinkLabel,
-    builder:
-        (context, match, style) => WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: Text('CHIP:${match.group(0)}'),
-        ),
+    builder: (context, match, style) => WidgetSpan(
+      alignment: PlaceholderAlignment.baseline,
+      baseline: TextBaseline.alphabetic,
+      child: Text('CHIP:${match.group(0)}'),
+    ),
   );
 }
 
@@ -147,11 +146,10 @@ void main() {
       await pumpWithPatterns(tester, 'ping @ada please', [
         InlinePattern(
           pattern: RegExp(r'@[a-z]+'),
-          builder:
-              (context, match, style) => TextSpan(
-                text: match.group(0),
-                style: style.copyWith(fontWeight: FontWeight.bold),
-              ),
+          builder: (context, match, style) => TextSpan(
+            text: match.group(0),
+            style: style.copyWith(fontWeight: FontWeight.bold),
+          ),
         ),
       ]);
       // One paragraph, no placeholder — text and mention in the same RichText.
@@ -168,9 +166,8 @@ void main() {
         InlinePattern.prefixed(
           prefix: '#',
           knownNames: const ['general', 'random'],
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.text('CHIP:#general'), findsOneWidget);
@@ -181,9 +178,8 @@ void main() {
         InlinePattern.prefixed(
           prefix: '#',
           knownNames: const ['general'],
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.text('CHIP:#General'), findsOneWidget);
@@ -196,9 +192,8 @@ void main() {
         InlinePattern.prefixed(
           prefix: '#',
           knownNames: const ['general'],
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.text('CHIP:#2959'), findsNothing);
@@ -213,9 +208,8 @@ void main() {
           prefix: '#',
           knownNames: const ['general'],
           genericTokenPattern: r'[A-Za-z0-9_][A-Za-z0-9_-]*',
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.text('CHIP:#2959'), findsOneWidget);
@@ -226,9 +220,8 @@ void main() {
         InlinePattern.prefixed(
           prefix: '@',
           genericTokenPattern: r'[A-Za-z0-9_]+',
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.textContaining('CHIP:'), findsNothing);
@@ -239,9 +232,8 @@ void main() {
         InlinePattern.prefixed(
           prefix: '#',
           knownNames: const ['design', 'design-review'],
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.text('CHIP:#design-review'), findsOneWidget);
@@ -251,9 +243,8 @@ void main() {
       await pumpWithPatterns(tester, 'plain #text stays plain', [
         InlinePattern.prefixed(
           prefix: '#',
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('CHIP:${match.group(0)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('CHIP:${match.group(0)}')),
         ),
       ]);
       expect(find.textContaining('CHIP:'), findsNothing);
@@ -303,9 +294,8 @@ void main() {
         InlinePattern.delimited(
           open: ':',
           knownNames: const ['fire'],
-          builder:
-              (context, match, style) =>
-                  WidgetSpan(child: Text('G1:${match.group(1)}')),
+          builder: (context, match, style) =>
+              WidgetSpan(child: Text('G1:${match.group(1)}')),
         ),
       ]);
       expect(find.text('G1:fire'), findsOneWidget);

@@ -6,16 +6,17 @@ repository: https://github.com/Chloemlla/gpt_markdown
 issue_tracker: https://github.com/Chloemlla/gpt_markdown/issues
 
 environment:
-  sdk: '>=3.7.0 <4.0.0'
-  # RadioGroup, used by the radio list marker, was added in 3.32.
-  flutter: ">=3.32.0"
+  # val_highlight needs Dart 3.9 and Flutter 3.35.
+  sdk: '>=3.9.0 <4.0.0'
+  flutter: ">=3.35.0"
 
 dependencies:
   flutter:
     sdk: flutter
   flutter_math_fork: ^0.7.4
   csslib: ^1.0.2
-  highlight: ^0.7.0
+  val_highlight: ^0.1.0
+  val_highlight_flutter: ^0.1.0
 
 dev_dependencies:
   flutter_test:

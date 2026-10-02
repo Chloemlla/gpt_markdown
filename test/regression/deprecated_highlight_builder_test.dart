@@ -67,9 +67,8 @@ void main() {
     await pump(
       tester,
       highlightBuilder: (context, text, style) => Text('OLD:$text'),
-      inlineCodeBuilder:
-          (context, code, style, codeStyle) =>
-              TextSpan(text: 'NEW:$code', style: style),
+      inlineCodeBuilder: (context, code, style, codeStyle) =>
+          TextSpan(text: 'NEW:$code', style: style),
     );
     expect(find.text('OLD:code'), findsNothing);
     expect(

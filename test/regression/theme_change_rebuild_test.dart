@@ -57,16 +57,12 @@ void main() {
   testWidgets('inline code follows a light/dark switch', (tester) async {
     await tester.pumpWidget(
       _Flip(
-        builder:
-            (dark) => MaterialApp(
-              theme: ThemeData(useMaterial3: true),
-              darkTheme: ThemeData(
-                useMaterial3: true,
-                brightness: Brightness.dark,
-              ),
-              themeMode: dark ? ThemeMode.dark : ThemeMode.light,
-              home: const Scaffold(body: GptMarkdown('run `code` now')),
-            ),
+        builder: (dark) => MaterialApp(
+          theme: ThemeData(useMaterial3: true),
+          darkTheme: ThemeData(useMaterial3: true, brightness: Brightness.dark),
+          themeMode: dark ? ThemeMode.dark : ThemeMode.light,
+          home: const Scaffold(body: GptMarkdown('run `code` now')),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -85,24 +81,22 @@ void main() {
   testWidgets('a new GptMarkdownTheme takes effect', (tester) async {
     await tester.pumpWidget(
       _Flip(
-        builder:
-            (flipped) => MaterialApp(
-              theme: ThemeData(
-                useMaterial3: true,
-                extensions: [
-                  GptMarkdownThemeData(
-                    brightness: Brightness.light,
-                    inlineCode: InlineCodeStyle(
-                      color:
-                          flipped
-                              ? const Color(0xFF00FF00)
-                              : const Color(0xFFFF0000),
-                    ),
-                  ),
-                ],
+        builder: (flipped) => MaterialApp(
+          theme: ThemeData(
+            useMaterial3: true,
+            extensions: [
+              GptMarkdownThemeData(
+                brightness: Brightness.light,
+                inlineCode: InlineCodeStyle(
+                  color: flipped
+                      ? const Color(0xFF00FF00)
+                      : const Color(0xFFFF0000),
+                ),
               ),
-              home: const Scaffold(body: GptMarkdown('run `code` now')),
-            ),
+            ],
+          ),
+          home: const Scaffold(body: GptMarkdown('run `code` now')),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -125,24 +119,22 @@ void main() {
 
     await tester.pumpWidget(
       _Flip(
-        builder:
-            (flipped) => MaterialApp(
-              theme: ThemeData(
-                useMaterial3: true,
-                extensions: [
-                  GptMarkdownThemeData(
-                    brightness: Brightness.light,
-                    linkColor:
-                        flipped
-                            ? const Color(0xFF00FF00)
-                            : const Color(0xFFFF0000),
-                  ),
-                ],
+        builder: (flipped) => MaterialApp(
+          theme: ThemeData(
+            useMaterial3: true,
+            extensions: [
+              GptMarkdownThemeData(
+                brightness: Brightness.light,
+                linkColor: flipped
+                    ? const Color(0xFF00FF00)
+                    : const Color(0xFFFF0000),
               ),
-              home: const Scaffold(
-                body: GptMarkdown('see [docs](https://example.com)'),
-              ),
-            ),
+            ],
+          ),
+          home: const Scaffold(
+            body: GptMarkdown('see [docs](https://example.com)'),
+          ),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -153,28 +145,26 @@ void main() {
   });
 
   testWidgets('heading styles follow the theme', (tester) async {
-    double? headingSize() =>
-        allSpans(tester)
-            .whereType<TextSpan>()
-            .firstWhere((s) => s.text == 'Title')
-            .style
-            ?.fontSize;
+    double? headingSize() => allSpans(tester)
+        .whereType<TextSpan>()
+        .firstWhere((s) => s.text == 'Title')
+        .style
+        ?.fontSize;
 
     await tester.pumpWidget(
       _Flip(
-        builder:
-            (flipped) => MaterialApp(
-              theme: ThemeData(
-                useMaterial3: true,
-                extensions: [
-                  GptMarkdownThemeData(
-                    brightness: Brightness.light,
-                    h1: TextStyle(fontSize: flipped ? 40 : 20),
-                  ),
-                ],
+        builder: (flipped) => MaterialApp(
+          theme: ThemeData(
+            useMaterial3: true,
+            extensions: [
+              GptMarkdownThemeData(
+                brightness: Brightness.light,
+                h1: TextStyle(fontSize: flipped ? 40 : 20),
               ),
-              home: const Scaffold(body: GptMarkdown('# Title')),
-            ),
+            ],
+          ),
+          home: const Scaffold(body: GptMarkdown('# Title')),
+        ),
       ),
     );
     await tester.pumpAndSettle();

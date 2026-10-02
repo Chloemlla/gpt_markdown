@@ -1,3 +1,44 @@
+## Unreleased
+
+### Added
+
+* Alerts: a quote whose first line is `[!NOTE]`, `[!TIP]`, `[!IMPORTANT]`,
+  `[!WARNING]` or `[!CAUTION]` renders with an icon, a title and an accent
+  colour on a faint tint of it (#79). Style it with
+  `GptMarkdownStyleSheet.alert` (`AlertStyle`, with per-type overrides) or
+  replace it with `alertBuilder`. Apps that set `blockQuoteBuilder` and no
+  `alertBuilder` keep their quote look. The parsed `MdBlockQuote` gains an
+  optional `alert`; its `children` are unchanged.
+* Images with a `data:` URL — `![](data:image/png;base64,...)` — render (#32).
+  They went to `NetworkImage`, which cannot load one outside a browser. The
+  decoded bytes are cached, so rebuilds do not decode again.
+* `GptMarkdownStyleSheet.blockSpacing` sets the gap between blocks, in logical
+  pixels (#41). Unset, it is the existing one empty line; it scales with the
+  text either way, and extra blank lines in the source never widen it.
+* `TableStyle.overflow`: `TableOverflow.wrap` fits a wide table to the screen
+  and wraps its cells instead of scrolling it sideways (#93). The default,
+  `TableOverflow.scroll`, is the existing behaviour.
+
+### Changed
+
+* Code blocks are highlighted with
+  [`val_highlight_flutter`](https://pub.dev/packages/val_highlight_flutter)
+  instead of `highlight`: 55 languages, its `light` and `dark` themes, and a
+  faster engine. A fence tag with no grammar still renders as plain text.
+* The minimum SDK is now Dart 3.9 and Flutter 3.35, which `val_highlight`
+  requires.
+
+### Fixed
+
+* Custom `inlineComponents` / `components` whose regex uses `unicode: true`
+  (for example `\p{L}`) now match. The flag was dropped when the patterns were
+  combined, so such components silently matched nothing (#114).
+* `GptMarkdown` no longer throws inside `IntrinsicWidth` or `IntrinsicHeight`
+  — the usual way to shrink-wrap a chat bubble — when the message holds a
+  table or a horizontal rule (#107). Normal layout is unchanged. Still open on
+  the legacy pipeline (`inlineComponents` / `components`) in debug builds,
+  where Flutter asserts on the dry baseline of block placeholders.
+
 ## 1.3.0
 
 Our biggest release yet.

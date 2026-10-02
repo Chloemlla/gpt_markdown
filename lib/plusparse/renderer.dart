@@ -71,16 +71,6 @@ class PlusparseRenderer {
   // Block level
   // ---------------------------------------------------------------------
 
-  /// The paragraph-break span the regex pipeline's `NewLines` component emits.
-  static TextSpan _paragraphBreak(GptMarkdownConfig config) => TextSpan(
-    text: "\n\n",
-    style: TextStyle(
-      fontSize: config.style?.fontSize ?? 14,
-      height: 1.15,
-      color: config.style?.color,
-    ),
-  );
-
   /// Replicates `BlockMd.span`'s wrapping of a block widget.
   static InlineSpan _blockSpan(Widget child) => BlockWidgetSpan(
     child: Row(
@@ -126,7 +116,7 @@ class PlusparseRenderer {
       if (spans.isNotEmpty) {
         spans.add(
           separator == "\n\n"
-              ? _paragraphBreak(config)
+              ? paragraphBreakSpan(context, config)
               : TextSpan(text: separator, style: config.style),
         );
       }
@@ -159,10 +149,8 @@ class PlusparseRenderer {
             context,
             config,
             level: level,
-            buildChildren:
-                (conf) => transform(
-                  content ??= _inlineSpans(context, children, conf),
-                ),
+            buildChildren: (conf) =>
+                transform(content ??= _inlineSpans(context, children, conf)),
           );
           return RevealableSpan(
             content: content!,
@@ -189,6 +177,47 @@ class PlusparseRenderer {
         return [
           _blockSpan(latexWidget(context, config, tex: tex, inline: false)),
         ];
+      case MdBlockQuote(:final children, :final alert)
+          when alert != null && _rendersAlerts(config):
+        Widget quoteContent(GptMarkdownConfig conf) => conf.getRich(
+          TextSpan(
+            children: _blockSpans(
+              context,
+              children,
+              conf.copyWith(blocksRenderDirectly: false),
+            ),
+          ),
+          ambientScaling: conf.blocksRenderDirectly,
+        );
+        // Built once, as for a quote below; the title is not part of the
+        // reveal, only the body is.
+        List<InlineSpan>? content;
+        InlineSpan build(SpanTransform transform) {
+          final child = alertSpan(
+            context,
+            config,
+            type: alert.type,
+            buildContent: (conf) => conf.getRich(
+              TextSpan(
+                children: transform(
+                  content ??= _blockSpans(
+                    context,
+                    alert.children,
+                    conf.copyWith(blocksRenderDirectly: false),
+                  ),
+                ),
+              ),
+              ambientScaling: conf.blocksRenderDirectly,
+            ),
+            buildQuoteContent: quoteContent,
+          );
+          return RevealableSpan(
+            content: content!,
+            rebuild: build,
+            children: [child],
+          );
+        }
+        return [build(_identity)];
       case MdBlockQuote(:final children):
         // Build once under the actual quote style. Counting an independently
         // rendered copy used to double the work at EVERY nesting level.
@@ -197,19 +226,18 @@ class PlusparseRenderer {
           final child = blockQuoteSpan(
             context,
             config,
-            buildContent:
-                (conf) => conf.getRich(
-                  TextSpan(
-                    children: transform(
-                      content ??= _blockSpans(
-                        context,
-                        children,
-                        conf.copyWith(blocksRenderDirectly: false),
-                      ),
-                    ),
+            buildContent: (conf) => conf.getRich(
+              TextSpan(
+                children: transform(
+                  content ??= _blockSpans(
+                    context,
+                    children,
+                    conf.copyWith(blocksRenderDirectly: false),
                   ),
-                  ambientScaling: conf.blocksRenderDirectly,
                 ),
+              ),
+              ambientScaling: conf.blocksRenderDirectly,
+            ),
           );
           return RevealableSpan(
             content: content!,
@@ -227,16 +255,15 @@ class PlusparseRenderer {
         return [
           _revealableBlock(
             content: labelSpans,
-            wrap:
-                (transform) => checkboxWidget(
-                  context,
-                  config,
-                  checked: checked,
-                  label: config.getRich(
-                    TextSpan(children: transform(labelSpans)),
-                    ambientScaling: config.blocksRenderDirectly,
-                  ),
-                ),
+            wrap: (transform) => checkboxWidget(
+              context,
+              config,
+              checked: checked,
+              label: config.getRich(
+                TextSpan(children: transform(labelSpans)),
+                ambientScaling: config.blocksRenderDirectly,
+              ),
+            ),
           ),
         ];
       case MdRadio(:final selected, :final children):
@@ -244,16 +271,15 @@ class PlusparseRenderer {
         return [
           _revealableBlock(
             content: labelSpans,
-            wrap:
-                (transform) => radioWidget(
-                  context,
-                  config,
-                  selected: selected,
-                  label: config.getRich(
-                    TextSpan(children: transform(labelSpans)),
-                    ambientScaling: config.blocksRenderDirectly,
-                  ),
-                ),
+            wrap: (transform) => radioWidget(
+              context,
+              config,
+              selected: selected,
+              label: config.getRich(
+                TextSpan(children: transform(labelSpans)),
+                ambientScaling: config.blocksRenderDirectly,
+              ),
+            ),
           ),
         ];
       case MdUnorderedList(:final items):
@@ -376,10 +402,10 @@ class PlusparseRenderer {
     final ambientAlign = config.textAlign;
     final leftConfig =
         (ambientAlign == null ||
-                ambientAlign == TextAlign.left ||
-                ambientAlign == TextAlign.start)
-            ? config
-            : config.copyWith(textAlign: TextAlign.left);
+            ambientAlign == TextAlign.left ||
+            ambientAlign == TextAlign.start)
+        ? config
+        : config.copyWith(textAlign: TextAlign.left);
 
     final tableBuilder = config.tableBuilder;
     if (tableBuilder != null) {
@@ -387,10 +413,9 @@ class PlusparseRenderer {
         final row = rows[index];
         final fields = List<CustomTableField>.generate(maxCol, (col) {
           return CustomTableField(
-            data:
-                col < row.cells.length
-                    ? _plainText(row.cells[col].content)
-                    : "",
+            data: col < row.cells.length
+                ? _plainText(row.cells[col].content)
+                : "",
             alignment: columnAlignments[col],
           );
         });
@@ -406,26 +431,27 @@ class PlusparseRenderer {
       );
     }
 
-    final tableStyle = (resolvedStyleSheet(context, config).table ??
-            const TableStyle())
-        .resolve(Theme.of(context).colorScheme);
+    final tableStyle =
+        (resolvedStyleSheet(context, config).table ?? const TableStyle())
+            .resolve(Theme.of(context).colorScheme);
     final tableRadius = tableStyle.borderRadius;
     return _blockSpan(
       _TableViewport(
+        overflow: tableStyle.overflow ?? TableOverflow.scroll,
         child: Table(
           textDirection: config.textDirection,
           defaultColumnWidth:
-              tableStyle.columnWidth ?? const CustomTableColumnWidth(),
+              tableStyle.columnWidth ??
+              _defaultTableColumnWidth(tableStyle.overflow, maxCol),
           defaultVerticalAlignment: TableCellVerticalAlignment.middle,
           border: TableBorder.all(
             width: tableStyle.borderWidth ?? 1,
             color:
                 tableStyle.borderColor ??
                 Theme.of(context).colorScheme.onSurface,
-            borderRadius:
-                tableRadius == null
-                    ? BorderRadius.zero
-                    : BorderRadius.all(tableRadius),
+            borderRadius: tableRadius == null
+                ? BorderRadius.zero
+                : BorderRadius.all(tableRadius),
           ),
           children: List<TableRow>.generate(rows.length, (index) {
             final row = rows[index];
@@ -434,27 +460,23 @@ class PlusparseRenderer {
             // first row under it is always unstriped.
             final stripe = tableStyle.rowStripeColor;
             return TableRow(
-              decoration:
-                  isHeader
-                      ? BoxDecoration(
-                        color:
-                            tableStyle.headerBackground ??
-                            Theme.of(
-                              context,
-                            ).colorScheme.surfaceContainerHighest,
-                      )
-                      : (stripe != null && index.isEven)
-                      ? BoxDecoration(color: stripe)
-                      : null,
+              decoration: isHeader
+                  ? BoxDecoration(
+                      color:
+                          tableStyle.headerBackground ??
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                    )
+                  : (stripe != null && index.isEven)
+                  ? BoxDecoration(color: stripe)
+                  : null,
               children: List<Widget>.generate(maxCol, (col) {
                 final cell = col < row.cells.length ? row.cells[col] : null;
                 if (cell == null || cell.content.isEmpty) {
                   return const SizedBox();
                 }
-                final cellConfig =
-                    columnAlignments[col] == TextAlign.left
-                        ? leftConfig
-                        : config;
+                final cellConfig = columnAlignments[col] == TextAlign.left
+                    ? leftConfig
+                    : config;
                 Widget content = Padding(
                   padding:
                       tableStyle.cellPadding ??

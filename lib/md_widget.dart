@@ -167,12 +167,133 @@ class CustomTableColumnWidth extends TableColumnWidth {
   /// `TableStyle.columnWidth` opts out of it — a `FlexColumnWidth` divides the
   /// width proportionally and measures nothing.
   static double _measure(RenderBox cell) {
+    if (_measuringWithoutLayout > 0) {
+      // An intrinsic or dry-layout query (`IntrinsicWidth`, `IntrinsicHeight`
+      // above the table) must not lay anything out: Flutter asserts on it, and
+      // in release the cell is left without a size and fails in paint (#107).
+      return cell.getMaxIntrinsicWidth(double.infinity);
+    }
     cell.layout(const BoxConstraints(), parentUsesSize: true);
     return cell.size.width;
   }
+
+  /// Non-zero while [_TableIntrinsicsGuard] is answering an intrinsic or
+  /// dry-layout query for its table.
+  ///
+  /// [RenderTable] sizes its columns through [maxIntrinsicWidth] both during
+  /// layout and while answering those queries, and passes nothing that tells
+  /// them apart. The table's parent does know, so it sets this around the
+  /// query. A counter rather than a flag, so a nested query cannot clear it
+  /// for the one still running.
+  static int _measuringWithoutLayout = 0;
 
   @override
   double minIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) {
     return 50;
   }
+}
+
+/// The column width a table of [columnCount] columns uses when
+/// [TableStyle.columnWidth] is unset.
+TableColumnWidth _defaultTableColumnWidth(
+  TableOverflow? overflow,
+  int columnCount,
+) => overflow == TableOverflow.wrap
+    ? _WrapTableColumnWidth(columnCount)
+    : const CustomTableColumnWidth();
+
+/// [CustomTableColumnWidth] with a minimum that keeps words whole, for
+/// [TableOverflow.wrap].
+///
+/// A table too wide for its space takes an equal share off every column until
+/// each reaches its minimum. With the flat 50-pixel minimum that crushes a
+/// short column mid-word ("Feat" / "ure") while a long one keeps its width, so
+/// the minimum here is the longest word in the column.
+///
+/// It is capped at an equal share of the table width. The minimums then never
+/// add up to more than the space, so a wrapped table always fits: a long URL,
+/// or more columns than the words allow, breaks inside a word rather than
+/// running off a screen that no longer scrolls.
+class _WrapTableColumnWidth extends TableColumnWidth {
+  const _WrapTableColumnWidth(this.columnCount);
+
+  final int columnCount;
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+      other is _WrapTableColumnWidth && other.columnCount == columnCount;
+
+  @override
+  int get hashCode => Object.hash(_WrapTableColumnWidth, columnCount);
+
+  @override
+  double maxIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) =>
+      const CustomTableColumnWidth().maxIntrinsicWidth(cells, containerWidth);
+
+  @override
+  double minIntrinsicWidth(Iterable<RenderBox> cells, double containerWidth) {
+    final cap = containerWidth.isFinite
+        ? containerWidth / max(columnCount, 1)
+        : double.infinity;
+    double width = 0;
+    for (final cell in cells) {
+      width = max(width, cell.getMinIntrinsicWidth(double.infinity));
+      if (width >= cap) {
+        return cap;
+      }
+    }
+    return width;
+  }
+}
+
+/// Tells [CustomTableColumnWidth] when its table is being measured rather than
+/// laid out, so the column measurement stays legal under `IntrinsicWidth` and
+/// `IntrinsicHeight`.
+///
+/// Ordinary layout passes straight through: only the intrinsic and dry-layout
+/// queries change, and those threw before.
+class _TableIntrinsicsGuard extends SingleChildRenderObjectWidget {
+  const _TableIntrinsicsGuard({required super.child});
+
+  @override
+  RenderObject createRenderObject(BuildContext context) =>
+      _RenderTableIntrinsicsGuard();
+}
+
+class _RenderTableIntrinsicsGuard extends RenderProxyBox {
+  T _withoutLayout<T>(T Function() query) {
+    CustomTableColumnWidth._measuringWithoutLayout++;
+    try {
+      return query();
+    } finally {
+      CustomTableColumnWidth._measuringWithoutLayout--;
+    }
+  }
+
+  @override
+  double computeMinIntrinsicWidth(double height) =>
+      _withoutLayout(() => super.computeMinIntrinsicWidth(height));
+
+  @override
+  double computeMaxIntrinsicWidth(double height) =>
+      _withoutLayout(() => super.computeMaxIntrinsicWidth(height));
+
+  @override
+  double computeMinIntrinsicHeight(double width) =>
+      _withoutLayout(() => super.computeMinIntrinsicHeight(width));
+
+  @override
+  double computeMaxIntrinsicHeight(double width) =>
+      _withoutLayout(() => super.computeMaxIntrinsicHeight(width));
+
+  @override
+  Size computeDryLayout(BoxConstraints constraints) =>
+      _withoutLayout(() => super.computeDryLayout(constraints));
+
+  @override
+  double? computeDryBaseline(
+    BoxConstraints constraints,
+    TextBaseline baseline,
+  ) => _withoutLayout(() => super.computeDryBaseline(constraints, baseline));
 }
