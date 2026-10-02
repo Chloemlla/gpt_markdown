@@ -294,37 +294,39 @@ The package's defaults are locked by goldens in
 `test/golden/default_look_test.dart` — eight constructs in light and dark.
 
 > [!IMPORTANT]
-> **They run on Linux only**, and are skipped everywhere else.
+> **Text in a golden is drawn as solid blocks**, so the same images pass on
+> macOS, Linux and Windows.
 >
-> Text rasterisation is not identical across platforms, so a golden captured on
-> macOS fails on CI for reasons that are not a change. Pinning to one platform
-> is the only way the comparison means anything.
+> Text rasterisation is not identical across platforms, so a golden of real
+> glyphs captured on macOS fails on Linux for reasons that are not a change. No
+> font is loaded in tests, so `flutter_test` draws every family in its built-in
+> `FlutterTest` font: each character is a 1em block in the text's colour.
+> Layout, sizes, spacing and colours are still locked; glyph shapes are not.
+> `test/flutter_test_config.dart` installs `GoldenComparator`
+> (`test/golden/golden_comparator.dart`) around every test; it fails any golden
+> taken while a real font is loaded.
 
-A tolerance was tried and rejected. Any threshold loose enough to absorb
-cross-platform antialiasing also hides real changes — widening the blockquote
-bar from 3 to 9 points passed at a 0.5% tolerance, which defeats the point.
+The comparator allows each colour channel of each pixel to be off by up to
+`GoldenComparator.maxChannelDelta` (8 of 255) levels. The engine sometimes
+antialiases a clipped rounded corner a shade differently from run to run, even
+on one machine. A real change moves pixels by tens of levels and still fails.
+This is deliberately not a share-of-pixels tolerance: one of those, at 0.5%,
+let the blockquote bar widen from 3 to 9 points.
+`test/golden/golden_comparator_test.dart` checks that the wider bar still fails.
 
-To regenerate after an intended change, dispatch the workflow against your
-branch. It regenerates on Linux and commits the images back, so a maintainer
-on macOS or Windows never has to produce them by hand:
+To add a golden, add an entry to `_cases`, or call `markdownGolden` from
+`test/golden/golden_test_utils.dart`. To regenerate after an intended change,
+on any machine:
 
 ```bash
-gh workflow run goldens.yml --ref my-branch
-gh run watch
-git pull
+flutter test test/golden --update-goldens
 ```
-
-Pass `-f commit=false` to get the images as an artifact and commit them
-yourself. On Linux, `./scripts/goldens.sh` does the whole thing locally.
 
 > [!WARNING]
 > Regenerating is not a fix for a failing golden — it is how you record a
 > change you meant to make. `--update-goldens` overwrites the reference with
 > whatever the code now draws, so running it on a red build makes the
-> regression the new baseline. Look at the diff images first.
->
-> This is why the workflow is manual. If it ran on every push the goldens would
-> always match and the test could never fail.
+> regression the new baseline. Look at the images before committing.
 
 If a golden fails on CI, download the `golden-failures` artifact from the run —
 it contains the expected, actual and diff images, which is the only readable

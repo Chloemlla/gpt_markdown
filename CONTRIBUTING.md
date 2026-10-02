@@ -49,10 +49,10 @@ argument lists them. The ones you will use most:
 - **A fixed bug gets a regression test** in `test/regression/`. A known bug
   that is not fixed yet can be recorded in `test/bugs/`; see
   [test/README.md](test/README.md).
-- **Golden tests** (`test/golden/`) only run on Linux, because text rendering
-  differs between platforms; elsewhere they are skipped. If your change is
-  meant to alter the default look, a maintainer regenerates the goldens with
-  the manual **Goldens** workflow.
+- **Golden tests** (`test/golden/`) draw text as solid blocks, so they pass
+  on every platform. If your change is meant to alter the default look,
+  regenerate them with `flutter test test/golden --update-goldens` and review
+  the images; see [docs/testing.md](docs/testing.md#golden-tests).
 - **Doc examples compile.** Code samples in `docs/` are mirrored in
   `test/docs/snippets_test.dart`; update both when you change an example.
 
