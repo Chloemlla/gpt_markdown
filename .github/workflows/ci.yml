@@ -12,9 +12,7 @@ concurrency:
 
 jobs:
   check:
-    # Goldens draw text as blocks, so they do not depend on the image. The
-    # image is still pinned so a new LTS never lands on a push that changed
-    # nothing.
+    # Pinned so a new LTS never lands on a push that changed nothing.
     runs-on: ubuntu-24.04
 
     steps:
@@ -22,25 +20,11 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
-          # Pinned: a new engine can repaint shapes a pixel differently and
-          # fail goldens on a push that changed nothing. Bump deliberately and
-          # regenerate goldens in the same change if they move.
           channel: stable
-          flutter-version: 3.47.5
           cache: true
 
       - name: Format, analyze, test
         run: ./scripts/check.sh
-
-      - name: Upload golden failures
-        # Golden diffs are the one failure that is impossible to debug from a
-        # log, so keep the images when they happen.
-        if: failure()
-        uses: actions/upload-artifact@v4
-        with:
-          name: golden-failures
-          path: test/golden/failures/
-          if-no-files-found: ignore
 
   score:
     runs-on: ubuntu-latest

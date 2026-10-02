@@ -294,43 +294,40 @@ The package's defaults are locked by goldens in
 `test/golden/default_look_test.dart` — eight constructs in light and dark.
 
 > [!IMPORTANT]
-> **Text in a golden is drawn as solid blocks**, so the same images pass on
-> macOS, Linux and Windows.
+> **Goldens are off unless you ask for them**, on CI too.
 >
-> Text rasterisation is not identical across platforms, so a golden of real
-> glyphs captured on macOS fails on Linux for reasons that are not a change. No
-> font is loaded in tests, so `flutter_test` draws every family in its built-in
-> `FlutterTest` font: each character is a 1em block in the text's colour.
-> Layout, sizes, spacing and colours are still locked; glyph shapes are not.
-> `test/flutter_test_config.dart` installs `GoldenComparator`
-> (`test/golden/golden_comparator.dart`) around every test; it fails any golden
-> taken while a real font is loaded.
+> Text rasterisation is not identical across platforms, so a golden captured on
+> macOS fails on Linux for reasons that are not a change. Drawing text as
+> blocks was tried, and the images still differed by up to 1.4% between macOS
+> and Linux CI. So goldens are a local check, compared on the machine that
+> generated them:
+>
+> ```bash
+> just check --golden   # the full check, goldens included
+> just update-goldens   # regenerate after an intended change
+> ```
+>
+> Both set `GPT_MARKDOWN_GOLDENS`; without it the golden tests are skipped.
 
-The comparator allows each colour channel of each pixel to be off by up to
-`GoldenComparator.maxChannelDelta` (8 of 255) levels. The engine sometimes
-antialiases a clipped rounded corner a shade differently from run to run, even
-on one machine. A real change moves pixels by tens of levels and still fails.
-This is deliberately not a share-of-pixels tolerance: one of those, at 0.5%,
-let the blockquote bar widen from 3 to 9 points.
-`test/golden/golden_comparator_test.dart` checks that the wider bar still fails.
+`test/flutter_test_config.dart` installs `GoldenComparator`
+(`test/golden/golden_comparator.dart`) around every test. It allows each colour
+channel of each pixel to be off by up to `GoldenComparator.maxChannelDelta`
+(8 of 255) levels: the engine sometimes antialiases a clipped rounded corner a
+shade differently from run to run, even on one machine. A real change moves
+pixels by tens of levels and still fails. This is deliberately not a
+share-of-pixels tolerance: one of those, at 0.5%, let the blockquote bar widen
+from 3 to 9 points. `test/golden/golden_comparator_test.dart` checks that the
+wider bar still fails; it runs everywhere, CI included.
 
 To add a golden, add an entry to `_cases`, or call `markdownGolden` from
-`test/golden/golden_test_utils.dart`. To regenerate after an intended change,
-on any machine:
-
-```bash
-flutter test test/golden --update-goldens
-```
+`test/golden/golden_test_utils.dart`.
 
 > [!WARNING]
 > Regenerating is not a fix for a failing golden — it is how you record a
 > change you meant to make. `--update-goldens` overwrites the reference with
 > whatever the code now draws, so running it on a red build makes the
-> regression the new baseline. Look at the images before committing.
-
-If a golden fails on CI, download the `golden-failures` artifact from the run —
-it contains the expected, actual and diff images, which is the only readable
-way to see what moved.
+> regression the new baseline. Look at the diff images in
+> `test/golden/failures/` first.
 
 ## README screenshots
 

@@ -41,12 +41,18 @@ publish-dry:
     flutter pub publish --dry-run
 
 # Format, analyse and test the package and all three apps. CI runs this script.
-check:
-    ./scripts/check.sh
+# Pass --golden to also compare the golden images (off by default, CI included).
+check *args:
+    ./scripts/check.sh {{args}}
 
 # Same, applying formatting instead of failing on it.
 fix:
     ./scripts/check.sh --fix
+
+# Regenerate the golden images after an intended change to the default look.
+# Review them before committing.
+update-goldens:
+    GPT_MARKDOWN_GOLDENS=1 flutter test test/golden --update-goldens
 
 # Everything a release needs to pass, ordered to fail fastest.
 release-check: check publish-dry score

@@ -74,9 +74,4 @@ jobs:
           cache: true
 
       - name: Analyze and test against beta
-        env:
-          # Goldens are generated on pinned stable. A beta engine can paint
-          # shapes a pixel differently, which would hide the lint and
-          # deprecation warnings this job exists to catch.
-          GPT_MARKDOWN_SKIP_GOLDENS: '1'
         run: ./scripts/check.sh

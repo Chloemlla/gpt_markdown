@@ -6,8 +6,8 @@ import 'golden_test_utils.dart';
 /// goldens are captured before a refactor and must still pass after it without
 /// `--update-goldens`. If one fails, a default moved.
 ///
-/// Text is drawn as blocks, so the images match on every platform; see
-/// `test/flutter_test_config.dart`. To add a case, add an entry here.
+/// Skipped unless run with `just check --golden`: goldens only match on the
+/// machine that generated them. To add a case, add an entry here.
 const _cases = <String, String>{
   'blockquote':
       '> A quoted line with `code`, **bold** and a\n'
