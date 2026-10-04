@@ -348,8 +348,7 @@ class MarkdownSerializer {
       return;
     }
 
-    // LaTeX - Math widget from flutter_math_fork
-    // We detect it by checking the widget type name since we can't import the type
+    // LaTeX - the Math widget from val_latex_flutter, detected by type name
     final typeName = widget.runtimeType.toString();
     if (typeName.contains('Math') || typeName.contains('Tex')) {
       // For LaTeX, we'll mark it as such - the actual content is harder to extract

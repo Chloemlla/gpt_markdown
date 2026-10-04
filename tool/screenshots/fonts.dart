@@ -47,40 +47,40 @@ Future<void> loadShowcaseFonts() async {
   await _loadFamily('packages/gpt_markdown/JetBrainsMono', mono);
   await _loadFamily('JetBrainsMono', mono);
 
-  await _loadKatexFonts();
+  await _loadMathTextFonts();
 }
 
-/// Registers the KaTeX families that `flutter_math_fork` draws equations with.
+/// Registers the Latin Modern text families `val_latex_flutter` sets
+/// `\text{…}` in.
 ///
-/// Without these an equation lays out correctly — fraction bars and integral
-/// signs are in the right places — but every glyph is a box.
-Future<void> _loadKatexFonts() async {
-  final root = _packageRoot('flutter_math_fork');
+/// Math glyphs need nothing: they are embedded in the package and drawn from
+/// their outlines. Text runs go through Flutter's text engine, so without
+/// these every letter inside `\text{…}` is a box.
+Future<void> _loadMathTextFonts() async {
+  final root = _packageRoot('val_latex_flutter');
   if (root == null) {
     return;
   }
-  final dir = Directory('${root.path}/lib/katex_fonts/fonts');
-  if (!dir.existsSync()) {
-    return;
-  }
-
-  // KaTeX_Main-Bold.ttf and KaTeX_Main-Regular.ttf are two faces of one
-  // family, so group the files by the part before the dash.
-  final families = <String, List<File>>{};
-  for (final entity in dir.listSync()) {
-    if (entity is! File || !entity.path.endsWith('.ttf')) {
-      continue;
-    }
-    final name = entity.uri.pathSegments.last;
-    final dash = name.indexOf('-');
-    if (dash <= 0) {
-      continue;
-    }
-    families.putIfAbsent(name.substring(0, dash), () => <File>[]).add(entity);
-  }
-
+  final dir = '${root.path}/fonts/latin-modern';
+  const families = {
+    'LatinModernRoman': [
+      'lmroman10-regular.otf',
+      'lmroman10-bold.otf',
+      'lmroman10-italic.otf',
+      'lmroman10-bolditalic.otf',
+    ],
+    'LatinModernSans': [
+      'lmsans10-regular.otf',
+      'lmsans10-bold.otf',
+      'lmsans10-oblique.otf',
+    ],
+    'LatinModernMono': ['lmmono10-regular.otf'],
+    'LatinModernRomanCaps': ['lmromancaps10-regular.otf'],
+  };
   for (final entry in families.entries) {
-    await _loadFamily('packages/flutter_math_fork/${entry.key}', entry.value);
+    await _loadFamily('packages/val_latex_flutter/${entry.key}', [
+      for (final file in entry.value) File('$dir/$file'),
+    ]);
   }
 }
 

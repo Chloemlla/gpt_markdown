@@ -793,50 +793,59 @@ Widget latexWidget(
   final workaround = config.latexWorkaround ?? (String tex) => tex;
   final builder =
       config.latexBuilder ??
-      (
-        BuildContext context,
-        String tex,
-        TextStyle textStyle,
-        bool inline,
-      ) => SelectableAdapter(
-        selectedText: tex,
-        child: Math.tex(
-          tex,
-          textStyle: textStyle,
-          mathStyle: MathStyle.display,
-          textScaleFactor: 1,
-          settings: const TexParserSettings(strict: Strict.ignore),
-          options: MathOptions(
-            sizeUnderTextStyle: MathSize.large,
-            color:
-                config.style?.color ?? Theme.of(context).colorScheme.onSurface,
-            fontSize: MarkdownTextScaling.fontSize(
-              context,
-              textStyle.fontSize ??
-                  Theme.of(context).textTheme.bodyMedium?.fontSize ??
-                  14,
+      (BuildContext context, String tex, TextStyle textStyle, bool inline) {
+        // Bold surrounding text (a heading, say) sets its formulas in bold.
+        final bold = (config.style?.fontWeight?.value ?? 400) >= 600;
+        // `Math` would scale by the ambient text scaler itself. Scaling the
+        // text size first and then enlarging by a fifth, as formulas always
+        // have been, needs the formula's own scaling off — the two differ for
+        // a non-linear scaler.
+        return MediaQuery.withNoTextScaling(
+          child: Math.tex(
+            bold ? '\\boldsymbol{$tex}' : tex,
+            // Display style everywhere, as an inline box: big operators and
+            // full-size fractions even in a paragraph, and no full-width block,
+            // so the formula keeps its own width and `LatexStyle` places it.
+            displayMode: true,
+            block: false,
+            // No wrapping or overflow handling: both need a `LayoutBuilder`,
+            // which throws inside `IntrinsicWidth` — the usual chat-bubble
+            // shrink-wrap (#107). `LatexStyle.scrollBlockHorizontally` covers
+            // wide formulas instead.
+            wrap: false,
+            overflow: MathOverflow.visible,
+            textStyle: textStyle.copyWith(
+              color:
+                  config.style?.color ??
+                  Theme.of(context).colorScheme.onSurface,
+              fontSize:
+                  MarkdownTextScaling.fontSize(
+                    context,
+                    textStyle.fontSize ??
+                        Theme.of(context).textTheme.bodyMedium?.fontSize ??
+                        14,
+                  ) *
+                  1.2,
             ),
-            mathFontOptions: FontOptions(
-              fontFamily: "Main",
-              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-              fontShape: FontStyle.normal,
+            parseOptions: const ParseOptions(strict: Strict.ignore),
+            // `Math` registers with the enclosing `SelectionArea` itself and
+            // copies the LaTeX of what is selected, so it needs no adapter.
+            // Plain text again, so it takes the scaling switched off above.
+            onError: (_, _) => MediaQuery(
+              data: MediaQuery.of(context),
+              child: Text(
+                workaround(tex),
+                textDirection: config.textDirection,
+                style: textStyle.copyWith(
+                  color: (!kDebugMode)
+                      ? null
+                      : Theme.of(context).colorScheme.error,
+                ),
+              ),
             ),
-            textFontOptions: FontOptions(
-              fontFamily: "Main",
-              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-              fontShape: FontStyle.normal,
-            ),
-            style: MathStyle.display,
           ),
-          onErrorFallback: (err) => Text(
-            workaround(tex),
-            textDirection: config.textDirection,
-            style: textStyle.copyWith(
-              color: (!kDebugMode) ? null : Theme.of(context).colorScheme.error,
-            ),
-          ),
-        ),
-      );
+        );
+      };
 
   final latexStyle =
       (resolvedStyleSheet(context, config).latex ?? const LatexStyle()).resolve(

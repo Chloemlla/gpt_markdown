@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart'
+    show Math, ParseResult;
 
 import 'autolink_demo.dart';
 import 'inline_code_demo.dart';
@@ -484,20 +485,24 @@ class _PlaygroundPageState extends State<PlaygroundPage> {
                     inlinePatterns:
                         _inlinePatterns ? demoInlinePatterns(context) : null,
                     latexBuilder: (context, tex, textStyle, inline) {
-                      final widget = Math.tex(
-                        tex,
-                        textStyle: textStyle,
-                        onErrorFallback: (err) => Text(
+                      Widget error(BuildContext context, ParseResult result) =>
+                          Text(
+                            tex,
+                            style: TextStyle(
+                              color: theme.colorScheme.error,
+                              fontFamily: 'monospace',
+                              fontSize: 12,
+                            ),
+                          );
+                      if (inline) {
+                        return Math.tex(
                           tex,
-                          style: TextStyle(
-                            color: theme.colorScheme.error,
-                            fontFamily: 'monospace',
-                            fontSize: 12,
-                          ),
-                        ),
-                      );
-                      if (inline) return widget;
-                      final controller = ScrollController();
+                          textStyle: textStyle,
+                          onError: error,
+                        );
+                      }
+                      // A display formula wraps to the width, and scrolls
+                      // what cannot break.
                       return Container(
                         margin: const EdgeInsets.symmetric(vertical: 8),
                         padding: const EdgeInsets.symmetric(
@@ -507,13 +512,11 @@ class _PlaygroundPageState extends State<PlaygroundPage> {
                               .withValues(alpha: 0.5),
                           borderRadius: BorderRadius.circular(8),
                         ),
-                        child: Scrollbar(
-                          controller: controller,
-                          child: SingleChildScrollView(
-                            controller: controller,
-                            scrollDirection: Axis.horizontal,
-                            child: widget,
-                          ),
+                        child: Math.tex(
+                          tex,
+                          displayMode: true,
+                          textStyle: textStyle,
+                          onError: error,
                         ),
                       );
                     },

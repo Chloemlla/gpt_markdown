@@ -1,5 +1,65 @@
 # Migration guide
 
+## 1.3.0 → next release
+
+No public API changes: every widget argument, builder, typedef and style
+keeps its name and type. Two dependencies were swapped, and that is where the
+work is, if any.
+
+### Requirements
+
+The minimum SDK is now **Dart 3.9 and Flutter 3.35**, which the new
+highlighting and maths packages need.
+
+### Maths: `flutter_math_fork` → `val_latex_flutter`
+
+The built-in renderer now uses
+[`val_latex_flutter`](https://pub.dev/packages/val_latex_flutter), and
+`gpt_markdown` no longer depends on `flutter_math_fork`.
+
+**If your `latexBuilder` imports `flutter_math_fork`, check your
+`pubspec.yaml`.** It compiled before even if the package was not listed there,
+because `gpt_markdown` pulled it in. It no longer does, so the import fails with
+`Target of URI doesn't exist`. Pick one:
+
+```yaml
+# Keep flutter_math_fork: list it yourself.
+dependencies:
+  flutter_math_fork: ^0.7.4
+```
+
+```dart
+// Or switch engines by changing one import. The compat library keeps
+// Math.tex, SelectableMath, MathOptions, MathStyle, TexParserSettings and
+// onErrorFallback, backed by val_latex.
+// import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:val_latex_flutter/flutter_math_compat.dart';
+```
+
+Either way, list the package you import in your own `pubspec.yaml` (for the
+second, `val_latex_flutter: ^0.1.0`). Leaning on `gpt_markdown`'s dependencies
+is what breaks here, and `depend_on_referenced_packages` flags it.
+
+No compiler warning covers these:
+
+* **Font.** Formulas are set in Latin Modern Math instead of KaTeX's fonts.
+  Size (1.2× the text), colour, display style and the raw-TeX fallback for a
+  formula that does not parse are unchanged. Goldens with maths in them move.
+* **Copying.** Inside a `SelectionArea`, selecting part of a formula copies the
+  LaTeX of that part; selecting all of it copies the whole source, as before.
+* **Unfinished input.** A formula still streaming in (`\frac{a`) renders what
+  exists instead of falling back to raw TeX.
+
+### Code blocks: `highlight` → `val_highlight_flutter`
+
+Code blocks are highlighted with
+[`val_highlight_flutter`](https://pub.dev/packages/val_highlight_flutter). The
+token colours change (its `light` and `dark` themes), and 55 languages are
+supported instead of about 190; a fence tag it does not know renders as plain
+text, as an unknown tag always has. Goldens with code blocks in them move.
+
+---
+
 ## 1.2.x → 1.3.0
 
 Nothing is removed in 1.3.0. Every deprecated argument, class and builder below

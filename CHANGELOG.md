@@ -27,9 +27,26 @@
   faster engine. A fence tag with no grammar still renders as plain text.
 * The minimum SDK is now Dart 3.9 and Flutter 3.35, which `val_highlight`
   requires.
+* Maths renders with
+  [`val_latex_flutter`](https://pub.dev/packages/val_latex_flutter) instead of
+  `flutter_math_fork`. Formulas are set in Latin Modern Math, a formula still
+  streaming in (`\frac{a`) renders what exists so far, and `\tag`, `align`,
+  `\ce{…}` and `\SI{…}` work. Size, colour, display style and the raw-TeX
+  fallback are unchanged. Selecting a formula copies the LaTeX of the selected
+  part. A `latexBuilder` written against `flutter_math_fork` keeps working if
+  your app still depends on it.
+* Maths streams as it arrives. A formula that is still open — `\(`, `\[`, or
+  `$`/`$$` with `useDollarSignsForLatex` — renders as far as it has come and
+  grows with each chunk, instead of being held back and appearing whole when
+  its closing delimiter lands. A command name still being typed is held for a
+  chunk, so raw TeX never shows. Only text that grows while mounted is
+  affected; a finished reply renders as before.
 
 ### Fixed
 
+* With `useDollarSignsForLatex`, a `$$` display formula that had not closed yet
+  was read as an empty `$…$` pair: it rendered as nothing and its body showed
+  as prose until the closing `$$` arrived.
 * Custom `inlineComponents` / `components` whose regex uses `unicode: true`
   (for example `\p{L}`) now match. The flag was dropped when the patterns were
   combined, so such components silently matched nothing (#114).

@@ -7,7 +7,7 @@ import 'package:gpt_markdown/gpt_markdown.dart';
 /// right-to-left paragraphs (flutter/flutter#54400).
 ///
 /// Inline LaTeX is replaced by a fixed-size box per formula so the assertions
-/// depend on layout only, not on font metrics or `flutter_math` internals.
+/// depend on layout only, not on font metrics or math-renderer internals.
 
 const _mathWidths = <String, double>{
   'one^1': 30,

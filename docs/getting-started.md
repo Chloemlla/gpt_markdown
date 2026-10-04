@@ -152,41 +152,46 @@ To restyle a component, see [customization](customization.md).
 ## LaTeX
 
 Maths renders with no configuration.
-[`flutter_math_fork`](https://pub.dev/packages/flutter_math_fork) is a
+[`val_latex_flutter`](https://pub.dev/packages/val_latex_flutter) is a
 dependency of the package, and the built-in renderer uses it — falling back to
-the raw TeX as text when a formula will not parse.
+the raw TeX as text when a formula will not parse. A formula that is still
+streaming in (`\frac{a`) renders what exists so far instead of failing.
 
 `latexBuilder` replaces that renderer when you want a different engine, a
 different fallback, or a wrapper around the same one. The `inline` flag
 separates `\( … \)` from `\[ … \]`.
 
 ```dart
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math;
+
 GptMarkdown(
   reply,
   latexBuilder: (context, tex, style, inline) => Math.tex(
     tex,
     textStyle: style,
-    onErrorFallback: (err) => Text(tex, style: style),
+    onError: (context, result) => Text(tex, style: style),
   ),
 )
 ```
 
 > [!WARNING]
-> Rendered maths cannot wrap. A wide block formula overflows on a phone.
+> The built-in renderer does not wrap. A wide block formula overflows on a
+> phone.
 
-Either give it somewhere to go:
+A display formula can wrap to the width, and scroll what cannot break:
 
 ```dart
-latexBuilder: (context, tex, style, inline) {
-  final math = Math.tex(tex, textStyle: style,
-      onErrorFallback: (err) => Text(tex, style: style));
-  if (inline) return math;
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: math,
-  );
-},
+latexBuilder: (context, tex, style, inline) => Math.tex(
+  tex,
+  displayMode: !inline,
+  textStyle: style,
+  onError: (context, result) => Text(tex, style: style),
+),
 ```
+
+Wrapping needs the available width, so a wrapping formula has no intrinsic
+size: inside `IntrinsicWidth` — a common way to shrink-wrap a chat bubble — it
+throws. That is why the built-in renderer does not wrap.
 
 Or let the package do it:
 

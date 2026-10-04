@@ -47,11 +47,11 @@ resolved style, so it can follow the theme rather than restate it.
 ```dart
 GptMarkdown(
   reply,
-  // Maths needs a renderer; pick your own engine.
+  // Replace the built-in maths renderer.
   latexBuilder: (context, tex, style, inline) => Math.tex(
     tex,
     textStyle: style,
-    onErrorFallback: (err) => Text(tex, style: style),
+    onError: (context, result) => Text(tex, style: style),
   ),
 
   // Cached images with a placeholder.

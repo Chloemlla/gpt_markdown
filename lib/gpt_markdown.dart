@@ -36,13 +36,14 @@ export 'package:gpt_markdown/styles/latex_style.dart';
 export 'package:gpt_markdown/styles/gpt_markdown_style_sheet.dart';
 
 import 'package:flutter/foundation.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:gpt_markdown/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown/custom_widgets/custom_error_image.dart';
 import 'package:gpt_markdown/custom_widgets/custom_rb_cb.dart';
-import 'package:gpt_markdown/custom_widgets/selectable_adapter.dart';
 import 'package:gpt_markdown/custom_widgets/unordered_ordered_list.dart';
 import 'dart:math';
+
+import 'package:val_latex_flutter/val_latex_flutter.dart'
+    show Math, MathOverflow, ParseOptions, Strict;
 
 import 'custom_widgets/code_field.dart';
 import 'custom_widgets/inline_code.dart';
@@ -56,6 +57,7 @@ import 'package:flutter/scheduler.dart';
 
 import 'streaming/block_entrance.dart';
 import 'streaming/inline_hold.dart';
+import 'streaming/math_stream.dart';
 import 'streaming/reveal_effect.dart';
 import 'streaming/reveal_engine.dart';
 import 'streaming/reveal_spans.dart';
@@ -757,8 +759,11 @@ class GptMarkdown extends StatelessWidget {
         // Same condition as the rewrite below: once a native `\(` appears,
         // a single `$` can never become maths, so it must not be held either.
         dollarsAreMath = true;
+        // Never `$$`: every closed `$$…$$` is already `\[…\]` by now, so a
+        // `$$` left over is a display formula still arriving. Read as an
+        // empty `$…$`, it became `\(\)` and left its body as prose.
         value = value.replaceAllMapped(
-          RegExp(r"(?<!\\)\$(.*?)(?<!\\)\$"),
+          RegExp(r"(?<![\\$])\$(?!\$)(.*?)(?<![\\$])\$(?!\$)"),
           (match) => "\\(${match[1] ?? ""}\\)",
         );
         value = value.splitMapJoin(

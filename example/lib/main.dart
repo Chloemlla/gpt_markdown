@@ -6,6 +6,7 @@ import 'autolink_demo.dart';
 import 'demo_theme.dart';
 import 'inline_code_demo.dart';
 import 'inline_patterns_demo.dart';
+import 'math_demo.dart';
 import 'max_lines_demo.dart';
 import 'selection_demo.dart';
 import 'rtl_demo.dart';
@@ -236,6 +237,13 @@ class _ExamplePageState extends State<ExamplePage> {
         title: const Text('gpt_markdown'),
         actions: [
           DemoThemeButton(onToggle: widget.onToggleTheme),
+          IconButton(
+            tooltip: 'Maths & LaTeX demo',
+            icon: const Icon(Icons.functions_rounded),
+            onPressed: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const MathPage()),
+            ),
+          ),
           IconButton(
             tooltip: 'Streaming demo',
             icon: const Icon(Icons.auto_awesome_rounded),
