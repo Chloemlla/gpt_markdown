@@ -1,6 +1,6 @@
 # Migration guide
 
-## 1.3.0 → next release
+## 1.3.0 → 1.3.1
 
 No public API changes: every widget argument, builder, typedef and style
 keeps its name and type. Two dependencies were swapped, and that is where the
