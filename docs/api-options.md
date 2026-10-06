@@ -106,7 +106,9 @@ Builders replace structure. All are optional:
 | `codeBuilder` | A fenced code block |
 | `tableBuilder` | A table |
 | `imageBuilder` | An image |
-| `latexBuilder` | Inline or block TeX |
+| `inlineLatexBuilder` | An inline formula, as a span |
+| `blockLatexBuilder` | A block formula, as a widget |
+| `latexBuilder` | *Deprecated.* Inline or block TeX, as a widget |
 | `inlineLinkBuilder` | A Markdown or automatic link, as a span |
 | `linkBuilder` | *Deprecated.* A link, as a widget |
 | `inlineCodeBuilder` | The span for inline code |
@@ -131,6 +133,7 @@ in [customization](customization.md#builders).
 |---|---|
 | `onLinkTap` | A link is activated; receives URL and label |
 | `onImageTap` | An image is activated |
+| `onLatexTap` | A formula is tapped; receives the formula and the part tapped |
 | `onCodeCopy` | The built-in code copy action succeeds |
 | `onSourceTagTap` | A citation/source tag is activated |
 | `onCheckboxChanged` | An interactive task checkbox changes |

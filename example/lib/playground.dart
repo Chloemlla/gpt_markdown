@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
-import 'package:val_latex_flutter/val_latex_flutter.dart'
-    show Math, ParseResult;
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 
 import 'autolink_demo.dart';
 import 'inline_code_demo.dart';
@@ -484,42 +483,35 @@ class _PlaygroundPageState extends State<PlaygroundPage> {
                     autolink: _autolink,
                     inlinePatterns:
                         _inlinePatterns ? demoInlinePatterns(context) : null,
-                    latexBuilder: (context, tex, textStyle, inline) {
-                      Widget error(BuildContext context, ParseResult result) =>
-                          Text(
-                            tex,
-                            style: TextStyle(
-                              color: theme.colorScheme.error,
-                              fontFamily: 'monospace',
-                              fontSize: 12,
-                            ),
-                          );
-                      if (inline) {
-                        return Math.tex(
-                          tex,
-                          textStyle: textStyle,
-                          onError: error,
-                        );
-                      }
-                      // A display formula wraps to the width, and scrolls
-                      // what cannot break.
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(8),
+                    // Inline maths as a span, so the formula sits on the
+                    // baseline and joins text selection.
+                    inlineLatexBuilder: (latex) =>
+                        MathSpan(latex.tex, style: latex.style),
+                    // A display formula wraps to the width, and scrolls what
+                    // cannot break.
+                    blockLatexBuilder: (latex) => Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Math.tex(
+                        latex.tex,
+                        displayMode: true,
+                        textStyle: latex.style,
+                        onError: (context, result) => Text(
+                          latex.tex,
+                          style: TextStyle(
+                            color: theme.colorScheme.error,
+                            fontFamily: 'monospace',
+                            fontSize: 12,
+                          ),
                         ),
-                        child: Math.tex(
-                          tex,
-                          displayMode: true,
-                          textStyle: textStyle,
-                          onError: error,
-                        ),
-                      );
-                    },
+                      ),
+                    ),
                     // Styling only — no builder needed, and the chip keeps
                     // wrapping, selection and baseline alignment.
                     inlineCodeStyle: InlineCodeStyle(

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:val_latex_flutter/val_latex_flutter.dart' show Math;
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 import 'package:gpt_markdown/gpt_markdown.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart';
@@ -16,13 +16,15 @@ Widget _page(String markdown, {InlineCodeStyle? inlineCodeStyle}) {
             markdown,
             inlineCodeStyle: inlineCodeStyle,
             onLinkTap: (url, title) {},
+            inlineLatexBuilder: (latex) =>
+                MathSpan(latex.tex, style: latex.style),
             // A display formula wraps to the frame and scrolls what cannot
             // break, so a narrow frame at a raised scale still fits.
-            latexBuilder: (context, tex, style, inline) => Math.tex(
-              tex,
-              displayMode: !inline,
-              textStyle: style,
-              onError: (context, result) => Text(tex, style: style),
+            blockLatexBuilder: (latex) => Math.tex(
+              latex.tex,
+              displayMode: true,
+              textStyle: latex.style,
+              onError: (context, result) => Text(latex.tex, style: latex.style),
             ),
           ),
         ),
@@ -202,11 +204,8 @@ Widget rightToLeft(BuildContext context) => Builder(
             'رابط: [الوثائق](https://example.com)',
             textDirection: TextDirection.rtl,
             useDollarSignsForLatex: true,
-            latexBuilder: (context, tex, style, inline) => Math.tex(
-              tex,
-              textStyle: style,
-              onError: (context, result) => Text(tex, style: style),
-            ),
+            inlineLatexBuilder: (latex) =>
+                MathSpan(latex.tex, style: latex.style),
           ),
         ),
       ),

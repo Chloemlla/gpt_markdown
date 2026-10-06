@@ -108,7 +108,13 @@ class GptMarkdown extends StatelessWidget {
     this.imageBuilder,
     this.textScaler,
     this.onLinkTap,
+    this.inlineLatexBuilder,
+    this.blockLatexBuilder,
+    @Deprecated(
+      'Use inlineLatexBuilder and blockLatexBuilder. Will be removed in 2.0.0.',
+    )
     this.latexBuilder,
+    this.onLatexTap,
     this.codeBuilder,
     this.inlineSourceTagBuilder,
     @Deprecated('Use inlineSourceTagBuilder. Will be removed in 2.0.0.')
@@ -187,8 +193,43 @@ class GptMarkdown extends StatelessWidget {
   /// The overflow.
   final TextOverflow? overflow;
 
-  /// The LaTeX builder.
+  /// Builds the span for an inline formula — `\(…\)`, or `$…$` with
+  /// [useDollarSignsForLatex] — replacing the default one.
+  ///
+  /// Wins over [latexBuilder] for inline maths when both are set. See
+  /// [InlineLatexBuilder].
+  final InlineLatexBuilder? inlineLatexBuilder;
+
+  /// Builds the widget for a block formula — `\[…\]`, or `$$…$$` with
+  /// [useDollarSignsForLatex] — replacing the default one.
+  ///
+  /// Wins over [latexBuilder] for block maths when both are set.
+  /// [LatexStyle]'s padding, background and horizontal scroll are applied
+  /// around the result. See [BlockLatexBuilder].
+  final BlockLatexBuilder? blockLatexBuilder;
+
+  /// Builds every formula, inline and block, as a widget.
+  ///
+  /// Used only where [inlineLatexBuilder] or [blockLatexBuilder] is null. An
+  /// inline result is wrapped in a [WidgetSpan] by the package.
+  @Deprecated(
+    'Use inlineLatexBuilder and blockLatexBuilder. Will be removed in 2.0.0.',
+  )
   final LatexBuilder? latexBuilder;
+
+  /// Called when a formula is tapped, with the formula and the part of it
+  /// under the finger — see [LatexTapDetails].
+  ///
+  /// ```dart
+  /// GptMarkdown(
+  ///   reply,
+  ///   onLatexTap: (tap) => showFormula(context, tap.source),
+  /// )
+  /// ```
+  ///
+  /// The default formulas wire it, as do the builders' `defaultSpan` and
+  /// `defaultWidget`. The deprecated [latexBuilder] does not.
+  final void Function(LatexTapDetails details)? onLatexTap;
 
   /// Whether to follow the link color.
   final bool followLinkColor;
@@ -628,7 +669,11 @@ class GptMarkdown extends StatelessWidget {
       textScaler: textScaler,
       followLinkColor: followLinkColor,
       latexWorkaround: latexWorkaround,
+      inlineLatexBuilder: inlineLatexBuilder,
+      blockLatexBuilder: blockLatexBuilder,
+      // ignore: deprecated_member_use_from_same_package
       latexBuilder: latexBuilder,
+      onLatexTap: onLatexTap,
       codeBuilder: codeBuilder,
       maxLines: maxLines,
       overflow: overflow,

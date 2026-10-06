@@ -294,8 +294,8 @@ P(A \mid B) = \frac{P(B \mid A)\, P(A)}{P(B)}
 3. Combine: \( y(t) = A\cos(\omega t) + B\sin(\omega t) \).
 
 > [!TIP]
-> Select any formula and copy it: you get its LaTeX source back, ready to
-> paste into a paper or another chat.''',
+> Tap any formula to see the part you tapped. Select one and copy it: you get
+> its LaTeX source back, ready to paste into a paper or another chat.''',
   ),
 ];
 
@@ -392,6 +392,18 @@ class _MathPageState extends State<MathPage> {
   Widget _markdown(String data) => GptMarkdown(
         data,
         onLinkTap: (url, title) {},
+        // Every formula is a tap target; the details say which part was hit.
+        onLatexTap: (tap) => ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(
+              content: Text(
+                tap.tappedTex == null
+                    ? 'Tapped ${tap.source}'
+                    : 'Tapped ${tap.tappedTex}  in  ${tap.source}',
+              ),
+            ),
+          ),
         styleSheet: const GptMarkdownStyleSheet(
           latex: LatexStyle(scrollBlockHorizontally: true),
         ),

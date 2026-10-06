@@ -44,6 +44,14 @@ typedef CodeBlockBuilder =
     );
 
 /// A builder function for the LaTeX.
+@Deprecated(
+  'Use InlineLatexBuilder via GptMarkdown.inlineLatexBuilder for inline maths '
+  'and BlockLatexBuilder via GptMarkdown.blockLatexBuilder for block maths. '
+  'One Widget-returning builder serves both, so an inline formula has to be '
+  'wrapped in a WidgetSpan by the package, and its four positional parameters '
+  'leave nowhere to pass the source as written or a tap handler without '
+  'breaking every caller. Will be removed in 2.0.0.',
+)
 typedef LatexBuilder =
     Widget Function(
       BuildContext context,
@@ -533,6 +541,168 @@ typedef InlineLinkBuilder = InlineSpan Function(LinkBuildDetails details);
 typedef InlineSourceTagBuilder =
     InlineSpan Function(SourceTagBuildDetails details);
 
+/// What [GptMarkdownConfig.onLatexTap] is told about a tap on a formula.
+@immutable
+final class LatexTapDetails {
+  /// Creates tap details.
+  const LatexTapDetails({
+    required this.tex,
+    required this.source,
+    required this.inline,
+    this.tappedTex,
+    this.href,
+  });
+
+  /// The whole formula as rendered, after [GptMarkdownConfig.latexWorkaround].
+  final String tex;
+
+  /// The whole formula as written in the document, before any workaround.
+  final String source;
+
+  /// Whether the formula is inline (`\(…\)`, `$…$`) rather than a block
+  /// (`\[…\]`, `$$…$$`).
+  final bool inline;
+
+  /// The TeX of the part under the finger — a symbol, a fraction, a group —
+  /// or null when the tap did not land on a part, or the builder that drew
+  /// the formula only reports the formula as a whole.
+  final String? tappedTex;
+
+  /// The target of an `\href{…}{…}` the tap landed on, or null.
+  final String? href;
+}
+
+/// What [InlineLatexBuilder] is told about one inline formula.
+///
+/// Like [LinkBuildDetails], this is the builder's only parameter: new
+/// information arrives as a new field, never as a new argument.
+final class InlineLatexBuildDetails extends InlineBuildDetails {
+  /// Creates inline formula details.
+  ///
+  /// [buildDefault] draws the formula the way the package does by default, and
+  /// [placeholder] places a widget in the line the way the package does;
+  /// [defaultSpan] and [asWidgetSpan] are built from them.
+  const InlineLatexBuildDetails({
+    required super.context,
+    required super.config,
+    required super.style,
+    required this.tex,
+    required this.source,
+    required Widget Function() buildDefault,
+    required InlineSpan Function(Widget child) placeholder,
+    this.onTap,
+  }) : _buildDefault = buildDefault,
+       _placeholder = placeholder;
+
+  /// The formula to render, after [GptMarkdownConfig.latexWorkaround].
+  final String tex;
+
+  /// The formula as written in the document, before any workaround.
+  final String source;
+
+  /// Invokes [GptMarkdownConfig.onLatexTap] for this formula as a whole, or
+  /// null when no handler is set.
+  ///
+  /// [defaultSpan] already wires the handler, and reports which part of the
+  /// formula was tapped. Call this from a formula of your own, rather than
+  /// `onLatexTap` directly, so the details stay right when they change.
+  final VoidCallback? onTap;
+
+  final Widget Function() _buildDefault;
+  final InlineSpan Function(Widget child) _placeholder;
+
+  /// Exactly what the formula renders as when no builder is given, taps
+  /// included. Returning it is a no-op, so it is the place to start.
+  InlineSpan defaultSpan() => _placeholder(_buildDefault());
+
+  /// The default formula as a widget, not yet placed in the line — to wrap
+  /// in something of your own and hand to [asWidgetSpan].
+  Widget defaultWidget() => _buildDefault();
+
+  /// [child] placed in the line exactly the way the default formula is:
+  /// aligned on the text baseline, and scaled with the paragraph around it.
+  ///
+  /// [onTap] is not attached: a formula widget usually handles its own taps.
+  InlineSpan asWidgetSpan(Widget child) => _placeholder(child);
+}
+
+/// What [BlockLatexBuilder] is told about one block formula.
+///
+/// Like [LinkBuildDetails], this is the builder's only parameter: new
+/// information arrives as a new field, never as a new argument.
+@immutable
+final class BlockLatexBuildDetails {
+  /// Creates block formula details.
+  ///
+  /// [buildDefault] draws the formula the way the package does by default;
+  /// [defaultWidget] returns it.
+  const BlockLatexBuildDetails({
+    required this.context,
+    required this.config,
+    required this.style,
+    required this.tex,
+    required this.source,
+    required Widget Function() buildDefault,
+    this.onTap,
+  }) : _buildDefault = buildDefault;
+
+  /// The element this formula is being built in.
+  final BuildContext context;
+
+  /// The configuration in force at this point in the document.
+  final GptMarkdownConfig config;
+
+  /// The text style the formula would be drawn with, fully resolved:
+  /// [LatexStyle.textStyle] applied over the surrounding style.
+  final TextStyle style;
+
+  /// The formula to render, after [GptMarkdownConfig.latexWorkaround].
+  final String tex;
+
+  /// The formula as written in the document, before any workaround.
+  final String source;
+
+  /// Invokes [GptMarkdownConfig.onLatexTap] for this formula as a whole, or
+  /// null when no handler is set.
+  ///
+  /// [defaultWidget] already wires the handler, and reports which part of the
+  /// formula was tapped.
+  final VoidCallback? onTap;
+
+  final Widget Function() _buildDefault;
+
+  /// Exactly what the formula renders as when no builder is given, taps
+  /// included. Returning it is a no-op, so it is the place to start.
+  ///
+  /// [LatexStyle]'s padding, background and horizontal scroll are applied
+  /// around whatever the builder returns, this included.
+  Widget defaultWidget() => _buildDefault();
+}
+
+/// Builds the span for one inline formula — `\(…\)`, or `$…$` with
+/// [GptMarkdown.useDollarSignsForLatex].
+///
+/// Return [InlineLatexBuildDetails.defaultSpan] to keep the stock formula, a
+/// span of your own (a `MathSpan` from `val_latex_flutter` with its own
+/// `onTap`, or plain text), or [InlineLatexBuildDetails.asWidgetSpan] around
+/// a widget:
+///
+/// ```dart
+/// inlineLatexBuilder: (latex) => latex.asWidgetSpan(
+///   Tooltip(message: latex.source, child: latex.defaultWidget()),
+/// ),
+/// ```
+typedef InlineLatexBuilder =
+    InlineSpan Function(InlineLatexBuildDetails details);
+
+/// Builds the widget for one block formula — `\[…\]`, or `$$…$$` with
+/// [GptMarkdown.useDollarSignsForLatex].
+///
+/// Return [BlockLatexBuildDetails.defaultWidget] to keep the stock formula,
+/// or a widget of your own. [LatexStyle]'s padding, background and horizontal
+/// scroll are applied around the result.
+typedef BlockLatexBuilder = Widget Function(BlockLatexBuildDetails details);
+
 /// A configuration class for the GPT Markdown component.
 ///
 /// The [GptMarkdownConfig] class is used to configure the GPT Markdown component.
@@ -547,7 +717,13 @@ class GptMarkdownConfig {
     this.textAlign,
     this.textScaler,
     this.latexWorkaround,
+    this.inlineLatexBuilder,
+    this.blockLatexBuilder,
+    @Deprecated(
+      'Use inlineLatexBuilder and blockLatexBuilder. Will be removed in 2.0.0.',
+    )
     this.latexBuilder,
+    this.onLatexTap,
     this.followLinkColor = false,
     this.codeBuilder,
     this.inlineSourceTagBuilder,
@@ -627,8 +803,34 @@ class GptMarkdownConfig {
   /// The LaTeX workaround.
   final String Function(String tex)? latexWorkaround;
 
-  /// The LaTeX builder.
+  /// Builds the span for an inline formula, replacing the default one.
+  ///
+  /// Wins over [latexBuilder] for inline maths when both are set.
+  final InlineLatexBuilder? inlineLatexBuilder;
+
+  /// Builds the widget for a block formula, replacing the default one.
+  ///
+  /// Wins over [latexBuilder] for block maths when both are set.
+  final BlockLatexBuilder? blockLatexBuilder;
+
+  /// Builds every formula, inline and block, as a widget.
+  ///
+  /// Used only where [inlineLatexBuilder] or [blockLatexBuilder] is null. An
+  /// inline result is wrapped in a [WidgetSpan] by the package.
+  @Deprecated(
+    'Use inlineLatexBuilder and blockLatexBuilder. Will be removed in 2.0.0.',
+  )
   final LatexBuilder? latexBuilder;
+
+  /// Called when a formula is tapped, with the formula and the part of it
+  /// under the finger.
+  ///
+  /// The default formulas wire it, and so do
+  /// [InlineLatexBuildDetails.defaultSpan] and
+  /// [BlockLatexBuildDetails.defaultWidget]. A formula a builder draws itself
+  /// reaches it through the details' `onTap`. The deprecated [latexBuilder]
+  /// does not.
+  final void Function(LatexTapDetails details)? onLatexTap;
 
   /// Builds the span for a `[1]` citation chip, replacing the default chip.
   ///
@@ -786,7 +988,13 @@ class GptMarkdownConfig {
     final TextAlign? textAlign,
     final TextScaler? textScaler,
     final String Function(String tex)? latexWorkaround,
+    final InlineLatexBuilder? inlineLatexBuilder,
+    final BlockLatexBuilder? blockLatexBuilder,
+    @Deprecated(
+      'Use inlineLatexBuilder and blockLatexBuilder. Will be removed in 2.0.0.',
+    )
     final LatexBuilder? latexBuilder,
+    final void Function(LatexTapDetails details)? onLatexTap,
     final InlineSourceTagBuilder? inlineSourceTagBuilder,
     @Deprecated('Use inlineSourceTagBuilder. Will be removed in 2.0.0.')
     final SourceTagBuilder? sourceTagBuilder,
@@ -833,7 +1041,11 @@ class GptMarkdownConfig {
       textAlign: textAlign ?? this.textAlign,
       textScaler: textScaler ?? this.textScaler,
       latexWorkaround: latexWorkaround ?? this.latexWorkaround,
+      inlineLatexBuilder: inlineLatexBuilder ?? this.inlineLatexBuilder,
+      blockLatexBuilder: blockLatexBuilder ?? this.blockLatexBuilder,
+      // ignore: deprecated_member_use_from_same_package
       latexBuilder: latexBuilder ?? this.latexBuilder,
+      onLatexTap: onLatexTap ?? this.onLatexTap,
       followLinkColor: followLinkColor ?? this.followLinkColor,
       codeBuilder: codeBuilder ?? this.codeBuilder,
       inlineSourceTagBuilder:

@@ -55,6 +55,11 @@ void main() {
     expect(tester.takeException(), isNull);
     expect(find.byType(SelectableText), findsNWidgets(mathSamples.length));
 
+    // Tapping a formula reports it.
+    await tester.tap(find.byType(Math).last);
+    await tester.pump();
+    expect(find.textContaining('Tapped'), findsOneWidget);
+
     // Unmount so the streaming card's timer stops.
     await tester.pumpWidget(const SizedBox());
   });

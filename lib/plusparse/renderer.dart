@@ -711,10 +711,15 @@ class PlusparseRenderer {
       case MdInlineCode(:final text):
         return inlineCodeSpan(context, text, config);
       case MdInlineLatex(:final tex):
-        return WidgetSpan(
-          alignment: PlaceholderAlignment.baseline,
-          baseline: TextBaseline.alphabetic,
-          child: latexWidget(context, config, tex: tex, inline: true),
+        return _latexSpan(
+          context,
+          config,
+          tex: tex,
+          placeholder: (child) => WidgetSpan(
+            alignment: PlaceholderAlignment.baseline,
+            baseline: TextBaseline.alphabetic,
+            child: child,
+          ),
         );
       case MdLink(:final children, :final url):
         return _link(context, children, url, config);

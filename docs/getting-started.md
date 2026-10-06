@@ -4,7 +4,7 @@
 
 ```yaml
 dependencies:
-  gpt_markdown: ^1.3.1
+  gpt_markdown: ^1.3.2
 ```
 
 ```dart
@@ -157,22 +157,42 @@ dependency of the package, and the built-in renderer uses it — falling back to
 the raw TeX as text when a formula will not parse. A formula that is still
 streaming in (`\frac{a`) renders what exists so far instead of failing.
 
-`latexBuilder` replaces that renderer when you want a different engine, a
-different fallback, or a wrapper around the same one. The `inline` flag
-separates `\( … \)` from `\[ … \]`.
+**Tapping a formula.** `onLatexTap` is called with the formula and the part of
+it under the finger:
 
 ```dart
-import 'package:val_latex_flutter/val_latex_flutter.dart' show Math;
+GptMarkdown(
+  reply,
+  onLatexTap: (tap) => showFormula(context, tap.source, part: tap.tappedTex),
+)
+```
+
+**Your own renderer.** `inlineLatexBuilder` builds an inline formula
+(`\( … \)`) as a span, and `blockLatexBuilder` builds a block formula
+(`\[ … \]`) as a widget. Each is handed one details object: the formula
+(`tex`, after `latexWorkaround`; `source`, as written), the resolved `style`,
+an `onTap` already bound to `onLatexTap`, and the stock formula
+(`defaultSpan()` / `defaultWidget()`) to keep or wrap.
+
+```dart
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 
 GptMarkdown(
   reply,
-  latexBuilder: (context, tex, style, inline) => Math.tex(
-    tex,
-    textStyle: style,
-    onError: (context, result) => Text(tex, style: style),
+  // A span: sits on the baseline and joins text selection.
+  inlineLatexBuilder: (latex) => MathSpan(
+    latex.tex,
+    style: latex.style,
+    onTap: (tap) => explain(tap.tex),
   ),
+  // The stock formula, with a tooltip.
+  blockLatexBuilder: (latex) =>
+      Tooltip(message: latex.source, child: latex.defaultWidget()),
 )
 ```
+
+`latexBuilder`, the single widget builder both replace, is deprecated and
+still works where neither is set.
 
 > [!WARNING]
 > The built-in renderer does not wrap. A wide block formula overflows on a
@@ -181,11 +201,11 @@ GptMarkdown(
 A display formula can wrap to the width, and scroll what cannot break:
 
 ```dart
-latexBuilder: (context, tex, style, inline) => Math.tex(
-  tex,
-  displayMode: !inline,
-  textStyle: style,
-  onError: (context, result) => Text(tex, style: style),
+blockLatexBuilder: (latex) => Math.tex(
+  latex.tex,
+  displayMode: true,
+  textStyle: latex.style,
+  onError: (context, result) => Text(latex.tex, style: latex.style),
 ),
 ```
 

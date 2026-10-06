@@ -1,5 +1,49 @@
 # Migration guide
 
+## 1.3.1 → 1.3.2
+
+Nothing breaks. `latexBuilder` is deprecated and keeps working; it is removed
+in 2.0.0.
+
+One widget builder used to serve every formula, so an inline formula always
+became a `WidgetSpan` the package wrapped, and there was nowhere to pass a tap
+handler or the source as written. It is split in two:
+
+```dart
+// Before
+GptMarkdown(
+  reply,
+  latexBuilder: (context, tex, style, inline) => inline
+      ? Math.tex(tex, textStyle: style)
+      : Center(child: Math.tex(tex, textStyle: style, displayMode: true)),
+)
+
+// After
+GptMarkdown(
+  reply,
+  inlineLatexBuilder: (latex) => MathSpan(latex.tex, style: latex.style),
+  blockLatexBuilder: (latex) => Center(child: latex.defaultWidget()),
+)
+```
+
+* `inlineLatexBuilder` returns an `InlineSpan`. A widget still works through
+  `latex.asWidgetSpan(widget)`, which places it exactly where the default
+  formula sits.
+* `blockLatexBuilder` returns a `Widget`. `LatexStyle` padding, background and
+  horizontal scroll still wrap it.
+* `latex.tex` is what the old builder's `tex` was (after `latexWorkaround`);
+  `latex.source` is the formula as written.
+* Migrate one side at a time if you like: where a new builder is set it wins,
+  and `latexBuilder` still handles the other side.
+
+If all you wanted from a builder was a tap, drop it and use `onLatexTap`:
+
+```dart
+GptMarkdown(reply, onLatexTap: (tap) => explain(tap.source))
+```
+
+---
+
 ## 1.3.0 → 1.3.1
 
 No public API changes: every widget argument, builder, typedef and style

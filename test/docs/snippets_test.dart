@@ -13,6 +13,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown/gpt_markdown.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 
 const documentedCharacterAnimations = <GptMarkdownAnimation>[
   GptMarkdownAnimation.none,
@@ -125,6 +126,10 @@ Widget docsCompile(BuildContext context) {
     codeBuilder: (context, name, code, closed) => Text(code),
     imageBuilder: (context, url, width, height) => const SizedBox(),
     latexBuilder: (context, tex, style, inline) => Text(tex),
+    inlineLatexBuilder: (latex) => latex.defaultSpan(),
+    blockLatexBuilder: (latex) =>
+        Tooltip(message: latex.source, child: latex.defaultWidget()),
+    onLatexTap: (tap) => debugPrint('${tap.source} ${tap.tappedTex}'),
     linkBuilder: (context, label, url, style) => const SizedBox(),
     sourceTagBuilder: (context, content, style) => Text(content),
     inlineLinkBuilder: (link) => link.defaultSpan(),
@@ -500,6 +505,23 @@ Widget dataUrlImageBuilder() {
         : Image.network(url, width: width, height: height),
   );
 }
+
+/// `docs/getting-started.md`, "LaTeX": the tap callback and both builders.
+Widget latexSnippets() => GptMarkdown(
+  'reply',
+  onLatexTap: (tap) => debugPrint('${tap.source} ${tap.tappedTex}'),
+  inlineLatexBuilder: (latex) => MathSpan(
+    latex.tex,
+    style: latex.style,
+    onTap: (tap) => debugPrint(tap.tex),
+  ),
+  blockLatexBuilder: (latex) => Math.tex(
+    latex.tex,
+    displayMode: true,
+    textStyle: latex.style,
+    onError: (context, result) => Text(latex.tex, style: latex.style),
+  ),
+);
 
 void main() {
   test('every snippet in docs/ compiles', () {
