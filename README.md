@@ -25,6 +25,28 @@
   <a href="https://pub.dev/packages/gpt_markdown">📦 pub.dev</a>
 </p>
 
+<br>
+
+<p align="center">
+  <a href="https://useval.io">
+    <img src="https://useval.io/icon-192.png" width="64" alt="Val logo">
+  </a>
+</p>
+
+<p align="center">
+  🛠️ Crafted with care by the team at <a href="https://useval.io"><strong>Val</strong></a>
+</p>
+
+<p align="center">
+  <a href="https://x.com/use_val">
+    <img src="https://img.shields.io/badge/Follow%20the%20stream-%40use__val-F47C3C?style=for-the-badge&logo=x&logoColor=white&labelColor=000000" alt="Follow the stream: @use_val on X">
+  </a>
+</p>
+
+<p align="center">
+  <sub>Releases, demos and what we're building next, as it happens.</sub>
+</p>
+
 ---
 
 ## ✨ Why gpt_markdown?
