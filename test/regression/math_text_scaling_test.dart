@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math;
 
 // Deliberately not linear: the multiplier varies with the base font size.
 class _TestScaler extends TextScaler {
@@ -29,8 +29,10 @@ void main() {
         ),
       ),
     );
+    // The scaler applies to the text size (24 -> 34); formulas are then
+    // drawn a fifth larger.
     final math = tester.widget<Math>(find.byType(Math));
-    expect(math.options!.fontSize, 34);
+    expect(math.textStyle!.fontSize, closeTo(34 * 1.2, 1e-9));
     expect(tester.takeException(), isNull);
   });
 

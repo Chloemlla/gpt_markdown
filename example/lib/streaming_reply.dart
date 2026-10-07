@@ -76,6 +76,67 @@ T(n) = \sum_{k=1}^{n} 1 = n \quad\Rightarrow\quad O(n)
 \]
 2. Which is why the iterative form wins on space.
 
+## Longer derivations
+
+Completing the square turns \( ax^2 + bx + c = 0 \) into the quadratic
+formula, one aligned step at a time:
+
+\[
+\begin{aligned}
+ax^2 + bx + c &= 0 \\
+x^2 + \frac{b}{a}x &= -\frac{c}{a} \\
+\left(x + \frac{b}{2a}\right)^2 &= \frac{b^2 - 4ac}{4a^2} \\
+x &= \frac{-b \pm \sqrt{b^2 - 4ac}}{2a}
+\end{aligned}
+\]
+
+The Gaussian integral, squared and moved to polar coordinates:
+
+\[
+\begin{aligned}
+I^2 &= \int_{-\infty}^{\infty}\!\int_{-\infty}^{\infty} e^{-(x^2+y^2)}\,dx\,dy \\
+&= \int_{0}^{2\pi}\!\int_{0}^{\infty} e^{-r^2}\,r\,dr\,d\theta \\
+&= 2\pi\left[-\tfrac{1}{2}e^{-r^2}\right]_{0}^{\infty} = \pi
+\quad\Rightarrow\quad I = \sqrt{\pi}
+\end{aligned}
+\]
+
+Maxwell's equations, with a numbered line for each:
+
+\[
+\begin{align}
+\nabla \cdot \mathbf{E} &= \frac{\rho}{\varepsilon_0} \\
+\nabla \cdot \mathbf{B} &= 0 \\
+\nabla \times \mathbf{E} &= -\frac{\partial \mathbf{B}}{\partial t} \\
+\nabla \times \mathbf{B} &= \mu_0 \mathbf{J}
+  + \mu_0 \varepsilon_0 \frac{\partial \mathbf{E}}{\partial t}
+\end{align}
+\]
+
+A piecewise function next to a matrix and its determinant:
+
+\[
+f(x) = \begin{cases}
+x^2 \sin \frac{1}{x} & x \neq 0 \\
+0 & x = 0
+\end{cases}
+\qquad
+A = \begin{pmatrix} 1 & 2 & 3 \\ 0 & 1 & 4 \\ 5 & 6 & 0 \end{pmatrix},
+\quad \det A = 1
+\]
+
+Two Taylor series, long enough to need the full width:
+
+\[
+e^{x} = \sum_{n=0}^{\infty} \frac{x^n}{n!}
+= 1 + x + \frac{x^2}{2!} + \frac{x^3}{3!} + \frac{x^4}{4!} + \cdots,
+\qquad
+\sin x = \sum_{n=0}^{\infty} \frac{(-1)^n\, x^{2n+1}}{(2n+1)!}
+\]
+
+And some chemistry: \( \ce{CH4 + 2O2 -> CO2 + 2H2O} \), at
+\( \SI{298.15}{\kelvin} \).
+
 ## Things to watch
 
 - [x] the empty list returns null

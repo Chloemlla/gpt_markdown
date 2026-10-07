@@ -14,3 +14,4 @@ analyzer:
     - example/**
     - example_ai_chat/**
     - widgetbook/**
+    - build/**

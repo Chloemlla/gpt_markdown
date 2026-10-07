@@ -158,6 +158,11 @@ class _StreamingPageState extends State<StreamingPage> {
                     charactersPerSecond: _charactersPerSecond,
                     revealFadeSeconds: _fadeSeconds,
                     onLinkTap: (url, title) {},
+                    // The longer derivations are wider than a chat column;
+                    // they scroll sideways instead of running off the edge.
+                    styleSheet: const GptMarkdownStyleSheet(
+                      latex: LatexStyle(scrollBlockHorizontally: true),
+                    ),
                   ),
                 ),
               ),

@@ -4,7 +4,7 @@
 
 ```yaml
 dependencies:
-  gpt_markdown: ^1.3.0
+  gpt_markdown: ^1.3.2
 ```
 
 ```dart
@@ -152,41 +152,66 @@ To restyle a component, see [customization](customization.md).
 ## LaTeX
 
 Maths renders with no configuration.
-[`flutter_math_fork`](https://pub.dev/packages/flutter_math_fork) is a
+[`val_latex_flutter`](https://pub.dev/packages/val_latex_flutter) is a
 dependency of the package, and the built-in renderer uses it — falling back to
-the raw TeX as text when a formula will not parse.
+the raw TeX as text when a formula will not parse. A formula that is still
+streaming in (`\frac{a`) renders what exists so far instead of failing.
 
-`latexBuilder` replaces that renderer when you want a different engine, a
-different fallback, or a wrapper around the same one. The `inline` flag
-separates `\( … \)` from `\[ … \]`.
+**Tapping a formula.** `onLatexTap` is called with the formula and the part of
+it under the finger:
 
 ```dart
 GptMarkdown(
   reply,
-  latexBuilder: (context, tex, style, inline) => Math.tex(
-    tex,
-    textStyle: style,
-    onErrorFallback: (err) => Text(tex, style: style),
-  ),
+  onLatexTap: (tap) => showFormula(context, tap.source, part: tap.tappedTex),
 )
 ```
 
-> [!WARNING]
-> Rendered maths cannot wrap. A wide block formula overflows on a phone.
-
-Either give it somewhere to go:
+**Your own renderer.** `inlineLatexBuilder` builds an inline formula
+(`\( … \)`) as a span, and `blockLatexBuilder` builds a block formula
+(`\[ … \]`) as a widget. Each is handed one details object: the formula
+(`tex`, after `latexWorkaround`; `source`, as written), the resolved `style`,
+an `onTap` already bound to `onLatexTap`, and the stock formula
+(`defaultSpan()` / `defaultWidget()`) to keep or wrap.
 
 ```dart
-latexBuilder: (context, tex, style, inline) {
-  final math = Math.tex(tex, textStyle: style,
-      onErrorFallback: (err) => Text(tex, style: style));
-  if (inline) return math;
-  return SingleChildScrollView(
-    scrollDirection: Axis.horizontal,
-    child: math,
-  );
-},
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
+
+GptMarkdown(
+  reply,
+  // A span: sits on the baseline and joins text selection.
+  inlineLatexBuilder: (latex) => MathSpan(
+    latex.tex,
+    style: latex.style,
+    onTap: (tap) => explain(tap.tex),
+  ),
+  // The stock formula, with a tooltip.
+  blockLatexBuilder: (latex) =>
+      Tooltip(message: latex.source, child: latex.defaultWidget()),
+)
 ```
+
+`latexBuilder`, the single widget builder both replace, is deprecated and
+still works where neither is set.
+
+> [!WARNING]
+> The built-in renderer does not wrap. A wide block formula overflows on a
+> phone.
+
+A display formula can wrap to the width, and scroll what cannot break:
+
+```dart
+blockLatexBuilder: (latex) => Math.tex(
+  latex.tex,
+  displayMode: true,
+  textStyle: latex.style,
+  onError: (context, result) => Text(latex.tex, style: latex.style),
+),
+```
+
+Wrapping needs the available width, so a wrapping formula has no intrinsic
+size: inside `IntrinsicWidth` — a common way to shrink-wrap a chat bubble — it
+throws. That is why the built-in renderer does not wrap.
 
 Or let the package do it:
 

@@ -134,6 +134,16 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   bool _arriving = false;
   Timer? _arrivalTimer;
 
+  /// Whether this reply has grown by append since it mounted — whether it is
+  /// being streamed here, as opposed to shown whole. Sticky, unlike
+  /// [_arriving], so a model pausing mid-formula does not flip the formula
+  /// back to raw source; cleared when the text is replaced outright.
+  ///
+  /// Open formulas are completed only when this is set. `isStreaming` cannot
+  /// gate it: it defaults to true, and a finished reply with a stray `\(` or
+  /// an unpaired `$` would otherwise render the rest of its line as maths.
+  bool _streamedHere = false;
+
   /// Plain text per segment, for the one semantics label a streaming reply
   /// exposes. Only ever populated while an assistive service is reading, so a
   /// reader who is not using one pays nothing for it.
@@ -248,9 +258,19 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
       // tolerance matches the longest run the inline hold can be keeping
       // hidden ([markupDelimiterHold]), because that hold is exactly what
       // confines the rewrite to unseen text.
+      //
+      // A dollar formula closing is recognised whatever its length: an open
+      // formula renders while it streams, so a long `$$…$$` block is on
+      // screen, and resetting would retype the message around it.
+      final dollarClosed =
+          shared < oldWidget.text.length &&
+          shared < widget.text.length &&
+          oldWidget.text.codeUnitAt(shared) == 0x24 /* $ */ &&
+          widget.text.codeUnitAt(shared) == 0x5C /* \ */;
       final tailEdit =
           shared > 0 &&
-          oldWidget.text.length - shared <= markupDelimiterHold + 8;
+          (dollarClosed ||
+              oldWidget.text.length - shared <= markupDelimiterHold + 8);
       if (!tailEdit) {
         // A regenerate or a branch switch replaces the text rather than
         // extending it; continuing from the old offset would be meaningless,
@@ -258,6 +278,7 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
         _engine.reset();
         _mountOffset = 0;
         _holdHighWater = 0;
+        _streamedHere = false;
         _startTicking();
         return;
       }
@@ -288,6 +309,7 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   /// Marks the reply as arriving, and schedules the moment it stops being so.
   void _noteArrival() {
     _arriving = true;
+    _streamedHere = true;
     _arrivalTimer?.cancel();
     _arrivalTimer = Timer(_arrivalQuiet, () {
       if (!mounted) {
@@ -557,33 +579,29 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   /// around the chip. Holding the head behind the unterminated construct costs
   /// a little latency and means every character is final when it appears.
   ///
+  /// Maths is the exception: an open formula is closed for the parser and
+  /// renders as far as it has arrived ([completeOpenMath]), so an equation
+  /// grows with the stream instead of appearing whole when its closer lands.
+  /// The renderer draws incomplete input, and the completion holds back a
+  /// command name still being typed, so no cut paints raw TeX.
+  ///
   /// Only the last segment can be incomplete, and only while more is coming.
-  /// A fence or block maths is left alone: those are opaque to begin with, and
-  /// [splitStreamSegments] already keeps them whole.
+  /// A fence is left alone: it is opaque to begin with, and
+  /// [splitStreamSegments] already keeps it whole.
   List<String> _visibleSegments(String source, List<String> segments) {
-    if (!widget.isStreaming ||
-        !widget.revealing ||
-        _holdExpired ||
-        segments.isEmpty) {
+    if (!widget.isStreaming || segments.isEmpty) {
       return segments;
     }
     final last = segments.last;
-    final opener = last.trimLeft();
     // Custom blocks own their incomplete-input policy; inline delimiters in
-    // their opaque bodies must never be held by the Markdown reveal.
-    if (widget.config.blockRegistry?.match(last.split('\n'), 0) != null) {
+    // their opaque bodies must never be held or completed by the Markdown
+    // reveal. Asked only when it could matter: matching is not free, and it
+    // runs on every rebuild.
+    bool isCustomBlock() =>
+        widget.config.blockRegistry?.match(last.split('\n'), 0) != null;
+    final revealing = widget.revealing && !_holdExpired;
+    if (revealing && isCustomBlock()) {
       return segments;
-    }
-    // Block maths is opaque: whole or nothing. An unterminated `\[` hands
-    // partial tex to the renderer, which paints the raw source on any cut
-    // landing mid-command — the equation flickered rendered <-> raw several
-    // times while it streamed. So a closed block shows and an open one waits.
-    if (opener.startsWith(r'\[')) {
-      if (last.contains(r'\]')) {
-        return segments;
-      }
-      _armHoldRelease();
-      return segments.sublist(0, segments.length - 1);
     }
     // An open fence streams as itself — its backticks are not inline
     // delimiters, and its body must not be withheld.
@@ -595,10 +613,37 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
     // backticks would be read as inline code and the prose after it would
     // stream unheld.
     final scanFrom = _afterLastFence(last);
+    final math = _streamedHere
+        ? completeOpenMath(
+            last.substring(scanFrom),
+            dollarsAreMath: widget.holdMathDollars,
+          )
+        : null;
+    final mathStart = math == null ? last.length : scanFrom + math.start;
+    List<String> withTail(String tail) => [
+      ...segments.sublist(0, segments.length - 1),
+      if (tail.trim().isNotEmpty) tail,
+    ];
+    String completedTail() => last.substring(0, mathStart) + math!.completed;
+
+    if (!revealing) {
+      return math == null || isCustomBlock()
+          ? segments
+          : withTail(completedTail());
+    }
+    // Block maths with nothing drawable yet waits, rather than flashing the
+    // bare `\[`.
+    if (math == null &&
+        last.trimLeft().startsWith(r'\[') &&
+        !last.contains(r'\]')) {
+      _armHoldRelease();
+      return segments.sublist(0, segments.length - 1);
+    }
+    // Everything before an open formula follows the usual hold.
     var safe =
         scanFrom +
         inlineSafeLength(
-          last.substring(scanFrom),
+          last.substring(scanFrom, mathStart),
           holdMathDollars: widget.holdMathDollars,
         );
     // The hold never moves backwards. Offsets are kept against the whole
@@ -610,18 +655,18 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
       if (floor > safe) {
         safe = min(floor, last.length);
       }
+      // Never into an open formula: its source is never shown raw.
+      safe = min(safe, mathStart);
       _holdHighWater = tailStart + safe;
+    }
+    if (math != null && safe >= mathStart) {
+      return withTail(completedTail());
     }
     if (safe >= last.length) {
       return segments;
     }
     _armHoldRelease();
-    final trimmed = last.substring(0, safe);
-    final out = segments.sublist(0, segments.length - 1);
-    if (trimmed.trim().isNotEmpty) {
-      out.add(trimmed);
-    }
-    return out;
+    return withTail(last.substring(0, safe));
   }
 
   /// Arms the quiet-stream release, once per stretch of unchanged text.

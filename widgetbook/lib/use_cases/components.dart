@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
 import 'package:widgetbook/widgetbook.dart';
 import 'package:widgetbook_annotation/widgetbook_annotation.dart';
@@ -16,22 +16,16 @@ Widget _page(String markdown, {InlineCodeStyle? inlineCodeStyle}) {
             markdown,
             inlineCodeStyle: inlineCodeStyle,
             onLinkTap: (url, title) {},
-            latexBuilder: (context, tex, style, inline) {
-              final math = Math.tex(
-                tex,
-                textStyle: style,
-                onErrorFallback: (err) => Text(tex, style: style),
-              );
-              if (inline) {
-                return math;
-              }
-              // Block maths cannot wrap, so it needs somewhere to go on a
-              // narrow frame at a raised scale.
-              return SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: math,
-              );
-            },
+            inlineLatexBuilder: (latex) =>
+                MathSpan(latex.tex, style: latex.style),
+            // A display formula wraps to the frame and scrolls what cannot
+            // break, so a narrow frame at a raised scale still fits.
+            blockLatexBuilder: (latex) => Math.tex(
+              latex.tex,
+              displayMode: true,
+              textStyle: latex.style,
+              onError: (context, result) => Text(latex.tex, style: latex.style),
+            ),
           ),
         ),
       ),
@@ -210,11 +204,8 @@ Widget rightToLeft(BuildContext context) => Builder(
             'رابط: [الوثائق](https://example.com)',
             textDirection: TextDirection.rtl,
             useDollarSignsForLatex: true,
-            latexBuilder: (context, tex, style, inline) => Math.tex(
-              tex,
-              textStyle: style,
-              onErrorFallback: (err) => Text(tex, style: style),
-            ),
+            inlineLatexBuilder: (latex) =>
+                MathSpan(latex.tex, style: latex.style),
           ),
         ),
       ),

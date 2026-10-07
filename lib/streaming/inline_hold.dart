@@ -11,6 +11,10 @@
 /// head waits: characters that could still change meaning are not shown until
 /// the construct that governs them is complete, and every character a reader
 /// sees is already in its final form.
+///
+/// [inlineSafeLength] still holds an open formula. The incremental view does
+/// not call it on one: it renders an open formula as far as it has arrived
+/// instead, and holds only the text before it.
 library;
 
 /// Longest run of text the reveal will wait on for a delimiter that also

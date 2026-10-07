@@ -47,12 +47,9 @@ resolved style, so it can follow the theme rather than restate it.
 ```dart
 GptMarkdown(
   reply,
-  // Maths needs a renderer; pick your own engine.
-  latexBuilder: (context, tex, style, inline) => Math.tex(
-    tex,
-    textStyle: style,
-    onErrorFallback: (err) => Text(tex, style: style),
-  ),
+  // Inline maths as a span of your own; block maths keeps the stock look.
+  inlineLatexBuilder: (latex) => MathSpan(latex.tex, style: latex.style),
+  onLatexTap: (tap) => explain(tap.source),
 
   // Cached images with a placeholder.
   imageBuilder: (context, url, width, height) => CachedNetworkImage(

@@ -683,7 +683,8 @@ styleSheet: const GptMarkdownStyleSheet(
 > formula overflows on a phone. This is the single most common LaTeX
 > complaint.
 
-The renderer itself is built in. `latexBuilder` replaces it — see
+The renderer itself is built in. `inlineLatexBuilder` and `blockLatexBuilder`
+replace it, and `onLatexTap` handles taps — see
 [getting started](getting-started.md#latex).
 
 ---
@@ -699,8 +700,8 @@ style-sheet object — they replace the component outright, and `CodeBlockStyle`
 `tableBuilder` does receive is the ambient body style, empty when the widget
 sets none.
 
-The three deprecated builders carry an unresolved style as well, kept that way
-because the builders written against them expect it: `sourceTagBuilder` is
+Three of the deprecated builders carry an unresolved style as well, kept that
+way because the builders written against them expect it: `sourceTagBuilder` is
 handed an empty `TextStyle` whenever `SourceTagStyle.textStyle` is unset,
 `linkBuilder` the ambient body style rather than the resolved link style its
 replacement is given, and `highlightBuilder` the ambient body style — the
@@ -717,7 +718,9 @@ resolved code style reaches it only where the surrounding style is null.
 | `codeBuilder` | `(context, String name, String code, bool closed)` |
 | `tableBuilder` | `(context, rows, TextStyle style, GptMarkdownConfig config)` |
 | `imageBuilder` | `(context, String url, double? width, double? height)` |
-| `latexBuilder` | `(context, String tex, TextStyle style, bool inline)` |
+| `inlineLatexBuilder` | `(InlineLatexBuildDetails details)` → `InlineSpan` |
+| `blockLatexBuilder` | `(BlockLatexBuildDetails details)` → `Widget` |
+| `latexBuilder` | *Deprecated.* `(context, String tex, TextStyle style, bool inline)` |
 | `inlineLinkBuilder` | `(LinkBuildDetails details)` → `InlineSpan` |
 | `linkBuilder` | *Deprecated.* `(context, InlineSpan label, String url, TextStyle style)` |
 | `inlineCodeBuilder` | `(context, String code, TextStyle style, InlineCodeStyle codeStyle)` |

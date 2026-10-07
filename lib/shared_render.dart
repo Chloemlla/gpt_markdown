@@ -779,81 +779,60 @@ InlineSpan imageSpan(
   );
 }
 
-/// Rendered maths, honouring [GptMarkdownConfig.latexBuilder],
+/// Rendered maths, honouring [GptMarkdownConfig.blockLatexBuilder], the
+/// deprecated [GptMarkdownConfig.latexBuilder],
 /// [GptMarkdownConfig.latexWorkaround] and [LatexStyle].
 ///
 /// [inline] picks between an inline formula and a display block; only the
 /// block form takes [LatexStyle]'s padding, background and horizontal scroll.
+/// Inline maths inside a paragraph goes through [_latexSpan], which also
+/// honours [GptMarkdownConfig.inlineLatexBuilder].
 Widget latexWidget(
   BuildContext context,
   GptMarkdownConfig config, {
   required String tex,
   required bool inline,
 }) {
-  final workaround = config.latexWorkaround ?? (String tex) => tex;
-  final builder =
-      config.latexBuilder ??
-      (
-        BuildContext context,
-        String tex,
-        TextStyle textStyle,
-        bool inline,
-      ) => SelectableAdapter(
-        selectedText: tex,
-        child: Math.tex(
-          tex,
-          textStyle: textStyle,
-          mathStyle: MathStyle.display,
-          textScaleFactor: 1,
-          settings: const TexParserSettings(strict: Strict.ignore),
-          options: MathOptions(
-            sizeUnderTextStyle: MathSize.large,
-            color:
-                config.style?.color ?? Theme.of(context).colorScheme.onSurface,
-            fontSize: MarkdownTextScaling.fontSize(
-              context,
-              textStyle.fontSize ??
-                  Theme.of(context).textTheme.bodyMedium?.fontSize ??
-                  14,
-            ),
-            mathFontOptions: FontOptions(
-              fontFamily: "Main",
-              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-              fontShape: FontStyle.normal,
-            ),
-            textFontOptions: FontOptions(
-              fontFamily: "Main",
-              fontWeight: config.style?.fontWeight ?? FontWeight.normal,
-              fontShape: FontStyle.normal,
-            ),
-            style: MathStyle.display,
-          ),
-          onErrorFallback: (err) => Text(
-            workaround(tex),
-            textDirection: config.textDirection,
-            style: textStyle.copyWith(
-              color: (!kDebugMode) ? null : Theme.of(context).colorScheme.error,
-            ),
-          ),
-        ),
-      );
-
   final latexStyle =
       (resolvedStyleSheet(context, config).latex ?? const LatexStyle()).resolve(
         Theme.of(context).colorScheme,
       );
-  final override = latexStyle.textStyle;
-  final base = config.style ?? const TextStyle();
+  final rendered = (config.latexWorkaround ?? (String tex) => tex)(tex);
+  final style = _latexTextStyle(config, latexStyle);
+  final blockBuilder = inline ? null : config.blockLatexBuilder;
+  // ignore: deprecated_member_use_from_same_package
+  final legacyBuilder = config.latexBuilder;
   // Build below the boundary so custom builders and the math engine read the
   // effective scaler, including when this formula is nested inside a block.
   Widget maths = MarkdownTextScaling.wrap(
     Builder(
-      builder: (mathContext) => builder(
-        mathContext,
-        workaround(tex),
-        override == null ? base : base.merge(override),
-        inline,
-      ),
+      builder: (mathContext) {
+        Widget buildDefault() => _defaultLatex(
+          mathContext,
+          config,
+          tex: rendered,
+          source: tex,
+          style: style,
+          inline: inline,
+        );
+        if (blockBuilder != null) {
+          return blockBuilder(
+            BlockLatexBuildDetails(
+              context: mathContext,
+              config: config,
+              style: style,
+              tex: rendered,
+              source: tex,
+              onTap: _latexTap(config, rendered, tex, inline),
+              buildDefault: buildDefault,
+            ),
+          );
+        }
+        if (legacyBuilder != null) {
+          return legacyBuilder(mathContext, rendered, style, inline);
+        }
+        return buildDefault();
+      },
     ),
     enabled: !inline && config.blocksRenderDirectly,
   );
@@ -884,6 +863,153 @@ Widget latexWidget(
     maths = Padding(padding: padding, child: maths);
   }
   return maths;
+}
+
+/// An inline formula as a span, honouring
+/// [GptMarkdownConfig.inlineLatexBuilder]; without one, [latexWidget] placed
+/// with [placeholder].
+///
+/// [placeholder] puts a widget in the line the way the calling pipeline does,
+/// so the default formula sits exactly where it always has.
+InlineSpan _latexSpan(
+  BuildContext context,
+  GptMarkdownConfig config, {
+  required String tex,
+  required InlineSpan Function(Widget child) placeholder,
+}) {
+  final builder = config.inlineLatexBuilder;
+  if (builder == null) {
+    return placeholder(latexWidget(context, config, tex: tex, inline: true));
+  }
+  final latexStyle =
+      (resolvedStyleSheet(context, config).latex ?? const LatexStyle()).resolve(
+        Theme.of(context).colorScheme,
+      );
+  final rendered = (config.latexWorkaround ?? (String tex) => tex)(tex);
+  final style = _latexTextStyle(config, latexStyle);
+  return builder(
+    InlineLatexBuildDetails(
+      context: context,
+      config: config,
+      style: style,
+      tex: rendered,
+      source: tex,
+      onTap: _latexTap(config, rendered, tex, true),
+      // The paragraph scales its placeholders, so whatever goes in one must
+      // not scale itself as well.
+      placeholder: (child) =>
+          placeholder(MarkdownTextScaling.wrap(child, enabled: false)),
+      buildDefault: () => Builder(
+        builder: (mathContext) => _defaultLatex(
+          mathContext,
+          config,
+          tex: rendered,
+          source: tex,
+          style: style,
+          inline: true,
+        ),
+      ),
+    ),
+  );
+}
+
+/// The style a formula is drawn with: [LatexStyle.textStyle] over the
+/// surrounding style.
+TextStyle _latexTextStyle(GptMarkdownConfig config, LatexStyle latexStyle) {
+  final override = latexStyle.textStyle;
+  final base = config.style ?? const TextStyle();
+  return override == null ? base : base.merge(override);
+}
+
+/// [GptMarkdownConfig.onLatexTap] bound to a formula as a whole, or null.
+VoidCallback? _latexTap(
+  GptMarkdownConfig config,
+  String tex,
+  String source,
+  bool inline,
+) {
+  final onTap = config.onLatexTap;
+  if (onTap == null) return null;
+  return () => onTap(LatexTapDetails(tex: tex, source: source, inline: inline));
+}
+
+/// The package's own formula: [tex] drawn by `val_latex_flutter`, with
+/// [GptMarkdownConfig.onLatexTap] wired to the part tapped.
+Widget _defaultLatex(
+  BuildContext context,
+  GptMarkdownConfig config, {
+  required String tex,
+  required String source,
+  required TextStyle style,
+  required bool inline,
+}) {
+  // Bold surrounding text (a heading, say) sets its formulas in bold.
+  final bold = (config.style?.fontWeight?.value ?? 400) >= 600;
+  final onLatexTap = config.onLatexTap;
+  // `Math` would scale by the ambient text scaler itself. Scaling the text
+  // size first and then enlarging by a fifth, as formulas always have been,
+  // needs the formula's own scaling off — the two differ for a non-linear
+  // scaler.
+  Widget math = MediaQuery.withNoTextScaling(
+    child: Math.tex(
+      bold ? '\\boldsymbol{$tex}' : tex,
+      // Display style everywhere, as an inline box: big operators and
+      // full-size fractions even in a paragraph, and no full-width block, so
+      // the formula keeps its own width and `LatexStyle` places it.
+      displayMode: true,
+      block: false,
+      // No wrapping or overflow handling: both need a `LayoutBuilder`, which
+      // throws inside `IntrinsicWidth` — the usual chat-bubble shrink-wrap
+      // (#107). `LatexStyle.scrollBlockHorizontally` covers wide formulas
+      // instead.
+      wrap: false,
+      overflow: MathOverflow.visible,
+      textStyle: style.copyWith(
+        color: config.style?.color ?? Theme.of(context).colorScheme.onSurface,
+        fontSize:
+            MarkdownTextScaling.fontSize(
+              context,
+              style.fontSize ??
+                  Theme.of(context).textTheme.bodyMedium?.fontSize ??
+                  14,
+            ) *
+            1.2,
+      ),
+      // Streaming on, explicitly: an unfinished formula renders what has
+      // arrived instead of failing. `Math.tex` defaults it off since
+      // val_latex_flutter 0.1.1, and a formula still streaming in reaches
+      // here closed but incomplete.
+      parseOptions: const ParseOptions(strict: Strict.ignore, streaming: true),
+      onTap: onLatexTap == null
+          ? null
+          : (tap) => onLatexTap(
+              LatexTapDetails(
+                tex: tex,
+                source: source,
+                inline: inline,
+                tappedTex: tap.tex,
+                href: tap.link,
+              ),
+            ),
+      // `Math` registers with the enclosing `SelectionArea` itself and copies
+      // the LaTeX of what is selected, so it needs no adapter.
+      // Plain text again, so it takes the scaling switched off above.
+      onError: (_, _) => MediaQuery(
+        data: MediaQuery.of(context),
+        child: Text(
+          tex,
+          textDirection: config.textDirection,
+          style: style.copyWith(
+            color: (!kDebugMode) ? null : Theme.of(context).colorScheme.error,
+          ),
+        ),
+      ),
+    ),
+  );
+  if (onLatexTap != null) {
+    math = MouseRegion(cursor: SystemMouseCursors.click, child: math);
+  }
+  return math;
 }
 
 /// Owns the horizontal scroll state of one mounted table.

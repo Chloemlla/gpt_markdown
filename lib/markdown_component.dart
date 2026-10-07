@@ -1122,9 +1122,11 @@ class LatexMath extends InlineMd {
     var p0 = exp.firstMatch(text.trim());
     p0?.group(0);
     String mathText = p0?[1]?.toString() ?? "";
-    return scaledWidgetSpan(
-      config: config,
-      child: latexWidget(context, config, tex: mathText, inline: true),
+    return _latexSpan(
+      context,
+      config,
+      tex: mathText,
+      placeholder: (child) => scaledWidgetSpan(config: config, child: child),
     );
   }
 }

@@ -8,7 +8,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+
+import 'package:val_latex_flutter/val_latex_flutter.dart'
+    show Math, MathOverflow, ParseOptions, Strict;
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_error_image.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_rb_cb.dart';
@@ -27,6 +29,7 @@ import 'custom_widgets/indent_widget.dart';
 import 'custom_widgets/link_button.dart';
 import 'streaming/block_entrance.dart';
 import 'streaming/inline_hold.dart';
+import 'streaming/math_stream.dart';
 import 'streaming/reveal_effect.dart';
 import 'streaming/reveal_engine.dart';
 import 'streaming/reveal_spans.dart';

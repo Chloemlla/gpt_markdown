@@ -24,6 +24,10 @@ const _cases = {
   'rule': 'above\n\n---\n\nbelow',
   'h1 rule': '# Title\n\nbody',
   'table': '| name | value |\n|---|---|\n| alpha | 1 |\n| beta | 22 |',
+  // Rendered maths must not lay out through a `LayoutBuilder`, which has no
+  // intrinsic sizes.
+  'block math': r'\[x = \frac{-b \pm \sqrt{b^2-4ac}}{2a}\]',
+  'inline math': r'where \(x^2\) is positive',
   'mixed':
       '# Title\n\ntext **bold**\n\n---\n\n| a | b |\n|---|---|\n| 1 | 2 |'
       '\n\n- item\n\n> quote',

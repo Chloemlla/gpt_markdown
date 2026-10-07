@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math, MathSpan;
 
 import 'autolink_demo.dart';
 import 'inline_code_demo.dart';
@@ -483,40 +483,35 @@ class _PlaygroundPageState extends State<PlaygroundPage> {
                     autolink: _autolink,
                     inlinePatterns:
                         _inlinePatterns ? demoInlinePatterns(context) : null,
-                    latexBuilder: (context, tex, textStyle, inline) {
-                      final widget = Math.tex(
-                        tex,
-                        textStyle: textStyle,
-                        onErrorFallback: (err) => Text(
-                          tex,
+                    // Inline maths as a span, so the formula sits on the
+                    // baseline and joins text selection.
+                    inlineLatexBuilder: (latex) =>
+                        MathSpan(latex.tex, style: latex.style),
+                    // A display formula wraps to the width, and scrolls what
+                    // cannot break.
+                    blockLatexBuilder: (latex) => Container(
+                      margin: const EdgeInsets.symmetric(vertical: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 16, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: theme.colorScheme.surfaceContainerHighest
+                            .withValues(alpha: 0.5),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Math.tex(
+                        latex.tex,
+                        displayMode: true,
+                        textStyle: latex.style,
+                        onError: (context, result) => Text(
+                          latex.tex,
                           style: TextStyle(
                             color: theme.colorScheme.error,
                             fontFamily: 'monospace',
                             fontSize: 12,
                           ),
                         ),
-                      );
-                      if (inline) return widget;
-                      final controller = ScrollController();
-                      return Container(
-                        margin: const EdgeInsets.symmetric(vertical: 8),
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 16, vertical: 12),
-                        decoration: BoxDecoration(
-                          color: theme.colorScheme.surfaceContainerHighest
-                              .withValues(alpha: 0.5),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Scrollbar(
-                          controller: controller,
-                          child: SingleChildScrollView(
-                            controller: controller,
-                            scrollDirection: Axis.horizontal,
-                            child: widget,
-                          ),
-                        ),
-                      );
-                    },
+                      ),
+                    ),
                     // Styling only — no builder needed, and the chip keeps
                     // wrapping, selection and baseline alignment.
                     inlineCodeStyle: InlineCodeStyle(

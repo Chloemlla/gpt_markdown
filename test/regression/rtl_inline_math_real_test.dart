@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_math_fork/flutter_math.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:gpt_markdown_chloemlla/gpt_markdown_chloemlla.dart';
+import 'package:val_latex_flutter/val_latex_flutter.dart' show Math;
 
 /// Same regression as `rtl_inline_widget_order_test.dart`, but going through
 /// the real `Math.tex` builder rather than a stubbed `latexBuilder`.
