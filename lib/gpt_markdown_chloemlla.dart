@@ -14,7 +14,6 @@ import 'package:val_latex_flutter/val_latex_flutter.dart'
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_divider.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_error_image.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/custom_rb_cb.dart';
-import 'package:gpt_markdown_chloemlla/custom_widgets/selectable_adapter.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/unordered_ordered_list.dart';
 import 'package:gpt_markdown_chloemlla/custom_widgets/markdown_config.dart';
 import 'dart:async';
