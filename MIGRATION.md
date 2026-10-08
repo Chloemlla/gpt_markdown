@@ -1,5 +1,12 @@
 # Migration guide
 
+## 1.3.3 → 1.3.4
+
+Nothing breaks. With `useDollarSignsForLatex`, a single `$x$` is now maths
+in a reply that also uses `\(…\)` — before, any `\(` turned single-dollar
+maths off for the whole reply. Prices are unaffected: `$5 and $10` stays
+text.
+
 ## 1.3.2 → 1.3.3
 
 No API is removed. Two things to check:

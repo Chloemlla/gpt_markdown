@@ -166,6 +166,12 @@ int inlineSafeLength(String source, {bool holdMathDollars = false}) {
   if (_definitionStart.hasMatch(lastLine)) {
     holdAt(lastNewline + 1, markupDelimiterHold);
   }
+  // * `2` or `2.` or `*` alone is the start of a list item still arriving.
+  //   Shown early, it renders as a paragraph under the list — a line taller —
+  //   and the list jumps back up a chunk later when it becomes an item.
+  if (lastNewline >= 0 && _partialListMarker.hasMatch(lastLine)) {
+    holdAt(lastNewline + 1, proseDelimiterHold);
+  }
 
   // A trailing character that is only the first half of an opener: `\` may
   // become `\(` and `<` may become `<u>`. Un-held it is shown, revealed, and
@@ -177,15 +183,38 @@ int inlineSafeLength(String source, {bool holdMathDollars = false}) {
     holdAt(partial.start, proseDelimiterHold);
   }
 
+  // A hold that ends just after a list marker would show an empty item —
+  // `2. ` with its content held back — which is a different height from the
+  // item it becomes, so the list jumps when the content lands. Hold the
+  // marker with its content instead.
+  if (limit > 0 && limit < source.length) {
+    final lineStart = source.lastIndexOf('\n', limit - 1) + 1;
+    if (lineStart > 0 &&
+        _bareListMarker.hasMatch(source.substring(lineStart, limit))) {
+      limit = lineStart;
+    }
+  }
+
   return limit;
 }
+
+/// A list marker with nothing after it yet: `2. `, `- `, `* [ ] `.
+final RegExp _bareListMarker = RegExp(
+  r'^\s*(?:\d{1,9}[.)]|[-*+])(?:\s+\[[ xX]?\]?)?\s*$',
+);
 
 /// A trailing `\`, `<`, `<u`, `</`, `</u`, `<!` or `<!-` — an opener the next
 /// character may complete.
 final RegExp _partialTrailingOpener = RegExp(r'(\\|</?u?|<!-?)$');
 
-/// The start of a link or footnote definition line: `[label]:`.
-final RegExp _definitionStart = RegExp(r'^ {0,3}\[[^\]]+\]:');
+/// A line that is only a list marker so far: `2`, `12.`, `3)`, `*`, `+`.
+final RegExp _partialListMarker = RegExp(r'^\s*(?:\d{1,9}[.)]?|[*+])$');
+
+/// The start of a link or footnote definition line: `[label]:` — or `[label]`
+/// alone, which the next character turns into one or not. Revealed early, a
+/// `[1]` showed as a citation chip, and since the hold never moves back, the
+/// chip stayed until the line ended and then vanished.
+final RegExp _definitionStart = RegExp(r'^ {0,3}\[[^\]]+\](?::|$)');
 
 /// A table delimiter row still arriving: only pipes, colons, dashes, spaces.
 final RegExp _partialTableSeparator = RegExp(r'^\|[\s|:\-]*$');

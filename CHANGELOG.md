@@ -1,3 +1,24 @@
+## 1.3.4
+
+### Changed
+
+* With `useDollarSignsForLatex`, `$…$` is maths even in a reply that also
+  uses `\(…\)`. It used to be turned off for the whole reply. Prices still
+  stay text (`$5 and $10`).
+
+### Fixed
+
+* With the fade reveal, content below a list jumped up a few pixels as the
+  fade finished passing over the list — most visibly the next heading.
+* A code block (or second paragraph) inside a list item, after a blank
+  line, was rendered outside the list with the item's indent left in every
+  line.
+* While a code block inside a `>` quote was still streaming, `$` maths and
+  inline patterns could reach into it (`echo \(A/\)B`).
+* The streaming hold no longer briefly shows a lone `2` before `2. item`, an
+  empty `2.` item whose content is still arriving, or a `[1]` that becomes a
+  `[1]: url` definition.
+
 ## 1.3.3
 
 ### Added

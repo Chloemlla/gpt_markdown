@@ -509,9 +509,14 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
       // A separator: the "\n" or "\n\n" the renderer puts between blocks.
       // It carries no content, so dropping it loses nothing — the column
       // stacks what it separated.
+      //
+      // Recognised by what it holds, not by its shape. While the reveal is
+      // fading it in, the same "\n" arrives rebuilt as a span with children.
+      // Testing for a childless span rejected it, so a list the fade was still
+      // passing over fell back to one paragraph of placeholders — a few pixels
+      // taller — and everything below jumped up when the fade moved on.
       if (span is TextSpan &&
-          span.children == null &&
-          (span.text ?? '').trim().isEmpty) {
+          span.toPlainText(includeSemanticsLabels: false).trim().isEmpty) {
         continue;
       }
       return null;
@@ -731,18 +736,25 @@ class _IncrementalMdViewState extends State<_IncrementalMdView>
   /// Offset just past the last line that closes a fence in [segment], or 0.
   static int _afterLastFence(String segment) {
     FenceOpen? open;
+    var depth = 0;
     var after = 0;
     var offset = 0;
     for (final line in segment.split('\n')) {
       final lineEnd = offset + line.length;
       final current = open;
-      if (current != null) {
-        if (isFenceClose(line, current)) {
+      final lineDepth = quoteDepth(line);
+      if (current != null && lineDepth >= depth) {
+        if (isFenceClose(unquoted(line), current)) {
           open = null;
           after = lineEnd < segment.length ? lineEnd + 1 : segment.length;
         }
       } else {
-        open = fenceOpen(line.trimLeft());
+        // A quoted fence also closes when its quote ends.
+        if (current != null) {
+          after = offset;
+        }
+        open = fenceOpen(unquoted(line));
+        depth = lineDepth;
       }
       offset = lineEnd + 1;
     }

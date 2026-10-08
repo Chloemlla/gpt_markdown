@@ -78,6 +78,25 @@ void main() {
       expect(output, contains(r'It costs $5 and '));
     });
 
+    testWidgets(r'\( \) and $ $ formulas mix in one paragraph', (tester) async {
+      final output = await render(
+        tester,
+        r'Inline \(x\) and dollars $a^2 + b^2$.',
+      );
+      expect('LATEX'.allMatches(output).length, 2);
+    });
+
+    testWidgets(r'prices stay text in a reply that also uses \( \)', (
+      tester,
+    ) async {
+      final output = await render(
+        tester,
+        r'With \(x\), it costs $5 and $10, and $y$ is maths.',
+      );
+      expect('LATEX'.allMatches(output).length, 2);
+      expect(output, contains(r'it costs $5 and $10, and '));
+    });
+
     testWidgets('maths is still maths', (tester) async {
       final output = await render(tester, r'Area $x^2$ and $$y$$.');
       expect('LATEX'.allMatches(output).length, 2);

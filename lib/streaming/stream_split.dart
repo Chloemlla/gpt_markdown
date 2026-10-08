@@ -28,6 +28,26 @@ int settledSplitOffset(String source) {
   // Offsets of blank lines outside fences and block maths.
   final candidates = <int>[];
 
+  // The lines since the last candidate, for [continuesAfterBlank].
+  final block = <String>[];
+
+  /// The first non-blank line after offset [from], or null.
+  String? nextContentLine(int from) {
+    var start = from;
+    while (start < source.length) {
+      var end = source.indexOf('\n', start);
+      if (end == -1) {
+        end = source.length;
+      }
+      final candidate = source.substring(start, end);
+      if (candidate.trim().isNotEmpty) {
+        return candidate;
+      }
+      start = end + 1;
+    }
+    return null;
+  }
+
   var lineStart = 0;
   var index = 0;
   while (index <= source.length) {
@@ -61,6 +81,15 @@ int settledSplitOffset(String source) {
         !trimmed.substring(4).contains('-->')) {
       inComment = true;
     } else if (!atEnd && trimmed.isEmpty && lineStart > 0) {
+      // A blank line inside a list item — before the item's second paragraph
+      // or its code block — is not a block boundary.
+      final next = nextContentLine(index + 1);
+      if (next != null && continuesAfterBlank(block, next)) {
+        block.add(line);
+        index++;
+        lineStart = index;
+        continue;
+      }
       // The split goes after the blank line, so the tail starts on real
       // content rather than with leading whitespace.
       //
@@ -71,6 +100,10 @@ int settledSplitOffset(String source) {
       // runs one construct too far ahead and then jumps *backwards* as soon
       // as the next character arrives — content settles, then unsettles.
       candidates.add(index + 1);
+      block.clear();
+    }
+    if (trimmed.isNotEmpty) {
+      block.add(line);
     }
 
     if (atEnd) {

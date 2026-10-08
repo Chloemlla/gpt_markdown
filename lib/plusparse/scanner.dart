@@ -209,17 +209,23 @@ bool isFenceClose(String line, FenceOpen open) {
 /// The one fence-tracking loop shared by the parser's neighbours (segment
 /// splitting, the streaming reveal), so they agree with the parser about
 /// where a fence ends.
+///
+/// Fences inside a block quote count: ```` > ```bash ```` opens one, and it
+/// closes with its closing line or when the quote ends.
 FenceOpen? openFenceAfter(Iterable<String> lines) {
   FenceOpen? open;
+  var depth = 0;
   for (final line in lines) {
     final current = open;
-    if (current != null) {
-      if (isFenceClose(line, current)) {
+    final lineDepth = quoteDepth(line);
+    if (current != null && lineDepth >= depth) {
+      if (isFenceClose(unquoted(line), current)) {
         open = null;
       }
-    } else {
-      open = fenceOpen(line.trimLeft());
+      continue;
     }
+    open = fenceOpen(unquoted(line));
+    depth = lineDepth;
   }
   return open;
 }
@@ -541,4 +547,80 @@ int paragraphEnd(String text, int i) {
     k = text.indexOf('\n', j);
   }
   return text.length;
+}
+
+// ---------------------------------------------------------------------------
+// Blank lines inside a block
+// ---------------------------------------------------------------------------
+
+/// Whether a blank line followed by [next] continues the block that [before]
+/// ends with, rather than separating two blocks.
+///
+/// It does when [next] is indented under a list item — a second paragraph
+/// or a fenced code block that belongs to the item, the shape of almost every
+/// step-by-step answer — or under a footnote definition. The owner is the
+/// nearest earlier line indented less than [next]; it continues the item
+/// exactly when the parser would nest [next] under it.
+///
+/// For the code that cuts a document into independently parsed pieces at
+/// blank lines: cutting here moved the item's code block out of the list,
+/// and parsed alone, every line of it kept the item's indentation.
+bool continuesAfterBlank(List<String> before, String next) {
+  final indent = indentWidth(next);
+  if (indent == 0) {
+    return false;
+  }
+  for (var k = before.length - 1; k >= 0; k--) {
+    final line = before[k];
+    if (isBlank(line)) {
+      continue;
+    }
+    if (indentWidth(line) >= indent) {
+      continue;
+    }
+    final t = line.trimLeft();
+    if (unorderedMarker(t) != null || orderedMarker(t) != null) {
+      return true;
+    }
+    return indent >= 4 && t.startsWith('[^');
+  }
+  return false;
+}
+
+// ---------------------------------------------------------------------------
+// Block quote markers
+// ---------------------------------------------------------------------------
+
+/// How many `>` quote markers open [line].
+int quoteDepth(String line) {
+  var depth = 0;
+  var i = 0;
+  while (i < line.length) {
+    final c = line.codeUnitAt(i);
+    if (c == _space || c == _tab) {
+      i += 1;
+    } else if (c == 0x3E /* > */ ) {
+      depth += 1;
+      i += 1;
+    } else {
+      break;
+    }
+  }
+  return depth;
+}
+
+/// [line] without its leading `>` quote markers and indentation — what a
+/// fence check has to look at, so ```` > ```bash ```` is seen as the fence
+/// it is.
+String unquoted(String line) {
+  var i = 0;
+  while (i < line.length) {
+    final c = line.codeUnitAt(i);
+    if (c == _space || c == _tab || c == 0x3E /* > */ ) {
+      i += 1;
+    } else {
+      break;
+    }
+  }
+  return i == 0 ? line : line.substring(i);
 }

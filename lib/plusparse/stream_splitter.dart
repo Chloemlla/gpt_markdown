@@ -9,6 +9,10 @@
 /// that caps per-chunk rebuild/layout cost at the tail instead of the whole
 /// message.
 ///
+/// A blank line followed by content indented under a list item (or a
+/// footnote) is part of that item, not a boundary — see
+/// [continuesAfterBlank].
+///
 /// Divergence from a full-document parse: a list whose items are separated by
 /// blank lines becomes multiple adjacent list segments instead of one list.
 /// Rendering is visually equivalent (every item is its own row widget either
@@ -74,6 +78,18 @@ List<String> splitStreamSegments(
     }
 
     if (line.trim().isEmpty) {
+      // A blank line inside a list item — before the item's second paragraph
+      // or its code block — is not a block boundary.
+      var next = index + 1;
+      while (next < lines.length && lines[next].trim().isEmpty) {
+        next += 1;
+      }
+      if (current.isNotEmpty &&
+          next < lines.length &&
+          continuesAfterBlank(current, lines[next])) {
+        current.add(line);
+        continue;
+      }
       closeSegment();
       continue;
     }

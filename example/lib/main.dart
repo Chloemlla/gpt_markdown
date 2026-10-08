@@ -139,8 +139,8 @@ $$
 \sum_{n=1}^{\infty} \frac{1}{n^2} = \frac{\pi^2}{6}
 $$
 
-Prices stay prose: it costs $5 and $10. (A single `$x$` is maths in replies
-that do not also use `\(`.)
+Inline with dollars too: $a^2 + b^2 = c^2$, in the same reply as the
+`\( \)` formulas above. Prices stay prose: it costs $5 and $10.
 
 ## Code blocks
 

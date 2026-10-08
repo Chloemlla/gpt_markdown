@@ -48,6 +48,28 @@ void main() {
       expect(inlineSafeLength('\n|'), greaterThanOrEqualTo(0));
     });
 
+    test('holds a line that is only a list marker so far', () {
+      expect(inlineSafeLength('1. one\n2'), '1. one\n'.length);
+      expect(inlineSafeLength('1. one\n2.'), '1. one\n'.length);
+      expect(inlineSafeLength('- one\n*'), '- one\n'.length);
+    });
+
+    test('never shows a list marker whose content is held', () {
+      // The open code span holds `curr`; the `2. ` before it waits too.
+      expect(inlineSafeLength('1. one\n2. `curr'), '1. one\n'.length);
+      expect(inlineSafeLength('- a\n- [ ] `x'), '- a\n'.length);
+    });
+
+    test('holds a bare [label] line that may become a definition', () {
+      expect(inlineSafeLength('text\n\n[1]'), 'text\n\n'.length);
+      const citation = 'text\n\n[1] the source';
+      expect(inlineSafeLength(citation), citation.length);
+    });
+
+    test('a hold at the very start does not throw', () {
+      expect(inlineSafeLength('`open'), 0);
+    });
+
     test('holds an HTML comment until it closes', () {
       expect(inlineSafeLength('a <!-- b'), 'a '.length);
       expect(inlineSafeLength('a <!'), 'a '.length);

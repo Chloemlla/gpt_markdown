@@ -328,11 +328,19 @@ List<(int, int)> _opaqueRegions(String source) {
   FenceOpen? fence;
   int? fenceStart;
   int? mathStart;
+  var fenceDepth = 0;
   for (final line in source.split('\n')) {
     final trimmed = line.trimLeft();
     final open = fence;
-    if (open != null) {
-      if (isFenceClose(line, open)) {
+    // A fence inside a block quote closes with its closing line, or when the
+    // quote ends.
+    if (open != null && quoteDepth(line) < fenceDepth) {
+      blocks.add((fenceStart!, offset > 0 ? offset - 1 : 0));
+      fence = null;
+    }
+    final current = fence;
+    if (current != null) {
+      if (isFenceClose(unquoted(line), current)) {
         blocks.add((fenceStart!, offset + line.length));
         fence = null;
       }
@@ -341,8 +349,9 @@ List<(int, int)> _opaqueRegions(String source) {
         blocks.add((mathStart, offset + line.length));
         mathStart = null;
       }
-    } else if ((fence = fenceOpen(trimmed)) != null) {
+    } else if ((fence = fenceOpen(unquoted(line))) != null) {
       fenceStart = offset;
+      fenceDepth = quoteDepth(line);
     } else if (trimmed.startsWith(r'\[') && !trimmed.contains(r'\]')) {
       mathStart = offset;
     }
