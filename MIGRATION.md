@@ -1,5 +1,23 @@
 # Migration guide
 
+## 1.3.2 → 1.3.3
+
+No API is removed. Two things to check:
+
+* **Exhaustive switches over `MdNode`** need cases for the new
+  `MdFootnoteReference` and `MdFootnoteDefinitions`. Code that only renders
+  through `GptMarkdown` is unaffected.
+* **Some replies render differently**, because more CommonMark is supported:
+
+  | Reply text | Now | To keep the old look |
+  |---|---|---|
+  | `Text` with `---` on the next line | `Text` is a heading | Blank line before `---` |
+  | `__init__` outside backticks | bold `init` | Put identifiers in backticks |
+  | `\*`, `\_`, `\#` | the character, backslash hidden | Write `\\` for a visible backslash |
+  | `&amp;`, `&copy;` | decoded to `&`, `©` | Write `&amp;amp;` |
+  | `$5 and $10` with `useDollarSignsForLatex` | stays text | — (was wrongly maths) |
+  | `<!-- note -->` | hidden | — |
+
 ## 1.3.1 → 1.3.2
 
 Nothing breaks. `latexBuilder` is deprecated and keeps working; it is removed

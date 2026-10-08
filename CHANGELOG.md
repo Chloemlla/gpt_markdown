@@ -1,3 +1,33 @@
+## 1.3.3
+
+### Added
+
+* CommonMark syntax: `_italic_` / `__bold__`, multi-backtick code spans,
+  `~~~` and longer fences, backslash escapes, entity references
+  (`&amp;`, `&#169;`), link titles and `<url>` destinations, reference
+  links, setext headings, closing `#`s, and hidden `<!-- comments -->`.
+* Footnotes: `text[^1]` with `[^1]: note`.
+* `[1]: url` gives a `[1]` citation chip a URL (`SourceTagBuildDetails.url`);
+  tapping it calls `onLinkTap` when no `onSourceTagTap` is set.
+* `MarkdownDefinitions` and `Plusparse.parse(definitions:)`, for parsing a
+  document in pieces.
+
+### Changed
+
+* `*` and `_` followed by a space no longer open emphasis (`2 * 3 * 4`).
+* Single `$` maths follows Pandoc's rule, so `$5 and $10` stays prose.
+* Text directly above `---` is now a heading.
+* `MdNode` has new subclasses: `MdFootnoteReference`, `MdFootnoteDefinitions`.
+
+### Fixed
+
+* Inline patterns no longer reach into code spans or maths (`` `:wave:` ``
+  showed a placeholder).
+* With `autolink: false`, patterns inside bold were not applied.
+* A URL right after `_` was not autolinked.
+* `$` maths was applied inside code.
+* `[text](url "title")` kept the title in the URL.
+
 ## 1.3.2
 
 ### Added
