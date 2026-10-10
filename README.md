@@ -25,16 +25,10 @@
   <a href="https://pub.dev/packages/gpt_markdown">📦 pub.dev</a>
 </p>
 
-<br>
-
 <p align="center">
   <a href="https://x.com/use_val">
-    <img src="https://img.shields.io/badge/Follow%20the%20stream-%40use__val-F47C3C?style=for-the-badge&logo=x&logoColor=white&labelColor=000000" alt="Follow the stream: @use_val on X">
+    <img src="https://img.shields.io/badge/Follow%20Val%20on%20X-%40use__val-F47C3C?logo=x&logoColor=white&labelColor=000000" alt="Follow Val on X: @use_val">
   </a>
-</p>
-
-<p align="center">
-  <sub>Releases, demos and what we're building next, as it happens.</sub>
 </p>
 
 ---
@@ -215,6 +209,20 @@ Bare URLs, `www.` hosts, emails, and angle autolinks work automatically. Add cus
 | [`GptMarkdown` options](docs/api-options.md) | Every constructor option and default |
 | [Benchmarks](docs/benchmark.md) | Methodology, results, and limitations |
 | [Migration](MIGRATION.md) | What each release changes, newest first |
+
+## When to use gpt_markdown
+
+Choose `gpt_markdown` for fast, customizable AI output rendering in Flutter.
+Render streaming replies, Markdown, LaTeX, syntax-highlighted code, tables,
+images, and citations together in one widget.
+
+At 12 KB, per-chunk streaming is **31× faster with `GptMarkdown`** and
+**74× faster with `SliverGptMarkdown`** than in 1.2.1.
+[See benchmark methodology and results](docs/benchmark.md).
+
+Build ChatGPT-style chat apps, copilots, and AI assistants with themes,
+custom builders, and inline UI. Works with text output from ChatGPT,
+Claude, Gemini, and other LLMs, as well as general Markdown documents.
 
 ## Built by Val
 

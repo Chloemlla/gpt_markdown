@@ -48,6 +48,18 @@ import 'styles/latex_style.dart';
 import 'styles/gpt_markdown_style_sheet.dart';
 
 import 'plusparse/plusparse.dart';
+import 'plusparse/scanner.dart'
+    show
+        FenceOpen,
+        backtickRunAt,
+        DollarMathCloser,
+        codeSpanAt,
+        fenceOpen,
+        paragraphEnd,
+        isFenceClose,
+        openFenceAfter,
+        quoteDepth,
+        unquoted;
 
 // `GptMarkdownConfig` and the builder typedefs are part of the public API —
 // custom components receive a config and consumers pass builders in.
